@@ -1,7 +1,18 @@
 'use strict';
 
-const dns = require('dns');
+/**
+ * @typedef {Object} Address
+ * @property {string} address - IPv4 or IPv6 address
+ * @property {number} ttl - IP DNS TTL
+ * @property {number} family - IP family
+ * @property {number} expiredTime - DNS TTL expiration timestamp
+ */
+
+const assert         = require('assert');
+const dns            = require('dns');
 const {EventEmitter} = require('events');
+
+const _ = require('lodash');
 
 class ResolveTask extends EventEmitter {
     /**
@@ -12,17 +23,35 @@ class ResolveTask extends EventEmitter {
     }
 
     /**
+     * @returns {number}
+     */
+    static get IPv6() {
+        return 6;
+    }
+
+    /**
      * @param {string} hostname
      * @param {number} ipVersion
      */
     constructor(hostname, ipVersion) {
         super();
 
-        this._callbacks = [];
+        assert(
+            _.isString(hostname) && hostname.length > 0,
+            `hostname must be not empty string. You provided: ${hostname}. You have bug in code`
+        );
 
-        this._hostname = hostname;
+        assert(
+            ipVersion === ResolveTask.IPv4 || ipVersion === ResolveTask.IPv6,
+            `ipVersion must be 4 or 6. You provided: ${ipVersion}. You have bug in code`
+        );
+
+        this._callbacks = [];
+        this._hostname  = hostname;
         this._ipVersion = ipVersion;
-        this._resolver = ipVersion === ResolveTask.IPv4 ? dns.resolve4 : dns.resolve6;
+        this._resolver  = ipVersion === ResolveTask.IPv4 ? dns.resolve4 : dns.resolve6;
+
+        this._resolved = this._resolved.bind(this);
     }
 
     /**
@@ -33,21 +62,33 @@ class ResolveTask extends EventEmitter {
     }
 
     run() {
-        this._resolver(this._hostname, {ttl: true}, (error, addresses) => {
-            this.emit('done');
+        this._resolver(this._hostname, {ttl: true}, this._resolved);
+    }
 
-            this._callbacks.forEach(callback => {
-                setImmediate(() => callback(error, addresses));
+    _resolved(error, addresses) {
+        assert(this._callbacks.length > 0, 'callbacks array cannot be empty. You have bug in code.');
+
+        if (!error) {
+            assert(
+                Array.isArray(addresses) && addresses.length > 0,
+                'addresses must be a not empty array. You have bug in code.'
+            );
+
+            addresses.forEach(address => {
+                address.family      = this._ipVersion;
+                address.expiredTime = Date.now() + address.ttl * 1000;
             });
 
-            if (addresses) {
-                addresses.forEach(address => {
-                    address.family = this._ipVersion;
-                });
+            this.emit('addresses', addresses);
+        }
 
-                this.emit('addresses', addresses);
-            }
+        this._callbacks.forEach(callback => {
+            setImmediate(() => callback(error, addresses));
         });
+
+        this._callbacks = [];
+
+        this.emit('done');
     }
 }
 

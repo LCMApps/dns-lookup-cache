@@ -7,12 +7,20 @@
 const request = require('request');
 const {lookup} = require('dns-lookup-cache');
 
+// With "request" module
+
 request({
-    url: url,
+    url: 'http://google.com',
     method: 'GET',
     lookup: lookup
-}, function (error, response, body) {
-  // ...
+}, (error, response, body) => {
+    // ...
+});
+
+// Direct usage
+
+lookup('google.com', {}, (error, address, family) => {
+    // ...
 });
 ```
 
@@ -71,8 +79,8 @@ NodeJS `dns.lookup`:
 > lookup('host-doesnot-support-ipv6', {family: 6}, console.log)
 
 > { Error: queryAaaa ENOTFOUND host-doesnot-support-ipv6
-      at makeNotFoundError (/path/dns-lookup-cache/src/lookup.js:182:19)
-      at ipv6AddressesTable.resolve (/path/dns-lookup-cache/src/lookup.js:147:37)
+      at makeNotFoundError (/path/dns-lookup-cache/src/Lookup.js:182:19)
+      at ipv6AddressesTable.resolve (/path/dns-lookup-cache/src/Lookup.js:147:37)
       at Immediate.setImmediate [as _onImmediate] (/path/dns-lookup-cache/src/IpAddressesTable.js:70:48)
       at runCallback (timers.js:773:18)
       at tryOnImmediate (timers.js:734:5)

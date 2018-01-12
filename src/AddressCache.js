@@ -1,18 +1,6 @@
 'use strict';
 
-/**
- * Object returned by `dns.resolve4/dns.resolve6`
- *
- * @typedef {Object} Address
- * @property {string} address - IPv4 or IPv6 address
- * @property {number} ttl - IP DNS TTL
- */
-
-/**
- * @typedef {Object} ExtendedAddress
- * @augments Address
- * @property {number} family - IP family
- */
+const _ = require('lodash');
 
 class AddressCache {
     constructor() {
@@ -21,7 +9,7 @@ class AddressCache {
 
     /**
      * @param {string} key
-     * @returns {[ExtendedAddress]|undefined}
+     * @returns {Address[]|undefined}
      */
     find(key) {
         if (!this._cache.has(key)) {
@@ -30,7 +18,7 @@ class AddressCache {
 
         const addresses = this._cache.get(key);
 
-        if (AddressCache._isExpired(addresses)) {
+        if (this._isExpired(addresses)) {
             return;
         }
 
@@ -39,24 +27,22 @@ class AddressCache {
 
     /**
      * @param {string} key
-     * @param {[Address]} addresses
+     * @param {Address[]} addresses
      */
     set(key, addresses) {
-        const adjustedAddresses = addresses.map(address => {
-            address.expiredTime = Date.now() + address.ttl * 1000;
-
-            return address;
-        });
-
-        this._cache.set(key, adjustedAddresses);
+        this._cache.set(key, addresses);
     }
 
     /**
-     * @param {[ExtendedAddress]} addresses
+     * @param {Address[]} addresses
      * @returns {boolean}
      * @private
      */
-    static _isExpired(addresses) {
+    _isExpired(addresses) {
+        if (_.isEmpty(addresses)) {
+            return true;
+        }
+
         return addresses.some(address => address.expiredTime <= Date.now());
     }
 }
