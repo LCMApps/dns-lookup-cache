@@ -1,0 +1,177 @@
+{
+  "env": {
+    "es6": true,
+    "node": true
+  },
+  "extends": "eslint:recommended",
+  "parserOptions": {
+    "ecmaVersion": 8,
+    "sourceType": "module"
+  },
+  "rules": {
+    "no-console": 0,
+    "no-case-declarations": 0,
+    "new-cap": 0,
+    "no-unused-vars": [
+      "error",
+      {
+        "args": "none"
+      }
+    ],
+    "indent": [
+      "error",
+      4,
+      {
+        "SwitchCase": 1,
+        "ObjectExpression": 1,
+        "CallExpression": {
+          "arguments": 1
+        }
+      }
+    ],
+    "linebreak-style": [
+      "error",
+      "unix"
+    ],
+    "quotes": [
+      "error",
+      "single",
+      {
+        "avoidEscape": true
+      }
+    ],
+    "semi": [
+      "error",
+      "always"
+    ],
+    "arrow-spacing": [
+      "error"
+    ],
+    "curly": [
+      "error"
+    ],
+    "no-use-before-define": [
+      "off"
+    ],
+    "no-caller": [
+      "error"
+    ],
+    "no-trailing-spaces": [
+      "error"
+    ],
+    "guard-for-in": [
+      "off"
+    ],
+    "eqeqeq": [
+      "error"
+    ],
+    "no-var": [
+      "error"
+    ],
+    "no-bitwise": [
+      "error"
+    ],
+    "camelcase": [
+      "error",
+      {
+        "properties": "never"
+      }
+    ],
+    "no-proto": [
+      "error"
+    ],
+    "no-new-wrappers": [
+      "error"
+    ],
+    "space-before-function-paren": [
+      "error",
+      {
+        "anonymous": "always",
+        "named": "never",
+        "asyncArrow": "always"
+      }
+    ],
+    "func-call-spacing": [
+      "error",
+      "never"
+    ],
+    "array-bracket-spacing": [
+      "error"
+    ],
+    "space-in-parens": [
+      "error"
+    ],
+    "quote-props": [
+      "error",
+      "as-needed",
+      {
+        "keywords": false,
+        "unnecessary": false
+      }
+    ],
+    "space-unary-ops": [
+      "error"
+    ],
+    "space-infix-ops": [
+      "error"
+    ],
+    "comma-spacing": [
+      "error"
+    ],
+    "yoda": [
+      "error",
+      "never",
+      {
+        "exceptRange": true
+      }
+    ],
+    "no-with": [
+      "error"
+    ],
+    "brace-style": [
+      "error",
+      "1tbs"
+    ],
+    "no-multi-str": [
+      "error"
+    ],
+    "no-multi-spaces": [
+      "error",
+      {
+        "exceptions": {
+          "VariableDeclarator": true,
+          "AssignmentExpression": true
+        }
+      }
+    ],
+    "one-var": [
+      "error",
+      "never"
+    ],
+    "semi-spacing": [
+      "error"
+    ],
+    "space-before-blocks": [
+      "error"
+    ],
+    "wrap-iife": [
+      "error"
+    ],
+    "comma-style": [
+      "error"
+    ],
+    "eol-last": [
+      "error"
+    ],
+    "dot-notation": [
+      "error"
+    ],
+    "max-len": [
+      "error",
+      120
+    ],
+    "spaced-comment": [
+      "error"
+    ]
+  }
+}
