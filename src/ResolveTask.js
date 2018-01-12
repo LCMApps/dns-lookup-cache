@@ -1,6 +1,14 @@
 'use strict';
 
-const dns = require('dns');
+/**
+ * @typedef {Object} Address
+ * @property {string} address - IPv4 or IPv6 address
+ * @property {number} ttl - IP DNS TTL
+ * @property {number} family - IP family
+ * @property {number} expiredTime - DNS TTL expiration timestamp
+ */
+
+const dns            = require('dns');
 const {EventEmitter} = require('events');
 
 class ResolveTask extends EventEmitter {
@@ -19,10 +27,9 @@ class ResolveTask extends EventEmitter {
         super();
 
         this._callbacks = [];
-
-        this._hostname = hostname;
+        this._hostname  = hostname;
         this._ipVersion = ipVersion;
-        this._resolver = ipVersion === ResolveTask.IPv4 ? dns.resolve4 : dns.resolve6;
+        this._resolver  = ipVersion === ResolveTask.IPv4 ? dns.resolve4 : dns.resolve6;
     }
 
     /**
@@ -40,9 +47,11 @@ class ResolveTask extends EventEmitter {
                 setImmediate(() => callback(error, addresses));
             });
 
+            /** Address[] addresses */
             if (addresses) {
                 addresses.forEach(address => {
-                    address.family = this._ipVersion;
+                    address.family      = this._ipVersion;
+                    address.expiredTime = Date.now() + address.ttl * 1000;
                 });
 
                 this.emit('addresses', addresses);

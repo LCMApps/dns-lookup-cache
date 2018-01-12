@@ -1,14 +1,12 @@
 'use strict';
 
-const dns = require('dns');
-
 const _     = require('lodash');
 const async = require('async');
 const rr    = require('rr');
 
 const AddressCache = require('./AddressCache');
 const TasksManager = require('./TasksManager');
-const ResolveTask = require('./ResolveTask');
+const ResolveTask  = require('./ResolveTask');
 
 class Lookup {
     /**
@@ -80,7 +78,7 @@ class Lookup {
         this._innerResolve(hostname, options.family, (error, records) => {
             if (error) {
                 if (error.code === 'ENODATA') {
-                    return callback(Lookup._makeNotFoundError(hostname, error.syscall));
+                    return callback(this._makeNotFoundError(hostname, error.syscall));
                 }
 
                 return callback(error);
@@ -119,7 +117,7 @@ class Lookup {
      * @param {string} hostname
      * @param {number} ipVersion
      * @param {Function} callback
-     * @public
+     * @private
      */
     _innerResolve(hostname, ipVersion, callback) {
         const key = `${hostname}_${ipVersion}`;
@@ -183,7 +181,7 @@ class Lookup {
                     const result = ipv4records.concat(ipv6records);
 
                     if (_.isEmpty(result)) {
-                        return callback(Lookup._makeNotFoundError(hostname));
+                        return callback(this._makeNotFoundError(hostname));
                     }
 
                     return callback(null, result);
@@ -193,7 +191,7 @@ class Lookup {
                     return callback(null, ...ipv6records);
                 }
 
-                return callback(Lookup._makeNotFoundError(hostname));
+                return callback(this._makeNotFoundError(hostname));
             }
         );
     }
@@ -220,12 +218,13 @@ class Lookup {
         };
     }
 
+    // noinspection JSMethodCanBeStatic
     /**
      * @param {string} hostname
      * @param {string} [syscall]
      * @returns {Error}
      */
-    static _makeNotFoundError(hostname, syscall) {
+    _makeNotFoundError(hostname, syscall) {
         const errorMessage = (syscall ? syscall + ' ' : '') + `ENOTFOUND ${hostname}`;
         const error        = new Error(errorMessage);
 

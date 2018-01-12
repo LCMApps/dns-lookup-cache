@@ -7,12 +7,20 @@
 const request = require('request');
 const {lookup} = require('lookup-dns-cache');
 
+// With "request" module
+
 request({
-    url: url,
+    url: 'http://google.com',
     method: 'GET',
     lookup: lookup
-}, function (error, response, body) {
-  // ...
+}, (error, response, body) => {
+    // ...
+});
+
+// Direct usage
+
+lookup('google.com', {}, (error, address, family) => {
+    // ...
 });
 ```
 

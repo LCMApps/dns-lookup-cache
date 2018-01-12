@@ -6,7 +6,7 @@ class TasksManager {
     }
 
     /**
-     * @param {sring} key
+     * @param {string} key
      * @returns {ResolveTask}
      */
     find(key) {
