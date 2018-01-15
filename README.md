@@ -79,8 +79,8 @@ NodeJS `dns.lookup`:
 > lookup('host-doesnot-support-ipv6', {family: 6}, console.log)
 
 > { Error: queryAaaa ENOTFOUND vss-cc-ha.hwtool.net
-      at makeNotFoundError (/path/lookup-dns-cache/src/lookup.js:182:19)
-      at ipv6AddressesTable.resolve (/path/lookup-dns-cache/src/lookup.js:147:37)
+      at makeNotFoundError (/path/lookup-dns-cache/src/Lookup.js:182:19)
+      at ipv6AddressesTable.resolve (/path/lookup-dns-cache/src/Lookup.js:147:37)
       at Immediate.setImmediate [as _onImmediate] (/path/lookup-dns-cache/src/IpAddressesTable.js:70:48)
       at runCallback (timers.js:773:18)
       at tryOnImmediate (timers.js:734:5)
