@@ -148,7 +148,7 @@ describe('must correct process `options` param', () => {
         it(`must correct call lookup method if 'options' param has invalid value - ${invalidIpFamily}`, () => {
             assert.throws(() => {
                 lookup(addresses.INET_HOST1, invalidIpFamily, () => {});
-            });
+            }, Error, 'invalid family number, must be one of the {4, 6} or undefined');
         });
     });
 
@@ -244,9 +244,7 @@ describe('must correct lookup for all IPv4 and IPv6 addresses', () => {
                     assert.isTrue(
                         ips.every(ip => {
                             return (
-                                testCase.expectedAddressIps.some(func =>
-                                    func(ip.address)
-                                ) &&
+                                testCase.expectedAddressIps.some(func => func(ip.address)) &&
                                 testCase.expectedIpFamilies.includes(ip.family)
                             );
                         })

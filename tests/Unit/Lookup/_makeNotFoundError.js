@@ -35,6 +35,6 @@ describe('Unit: Lookup::_makeNotFoundError', () => {
         assert.strictEqual(error.hostname, addresses.INET_HOST1);
         assert.strictEqual(error.code, dns.NOTFOUND);
         assert.strictEqual(error.errno, dns.NOTFOUND);
-        assert.isUndefined(error.syscall);
+        assert.notProperty(error, 'syscall');
     });
 });

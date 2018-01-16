@@ -13,7 +13,7 @@ describe('Unit: AddressCache::find', () => {
     });
 
     it('must return undefined, cuz there are no addresses for this hostname key', () => {
-        const notExistedKey     = addresses.INET_HOST1;
+        const notExistedKey = addresses.INET_HOST1;
 
         const result = addressCache.find(notExistedKey);
 

@@ -23,31 +23,6 @@ describe('Unit: ResolveTask::_resolved', () => {
         onDoneSpy      = sinon.spy();
     });
 
-    it(`must correct throw assertion error in case no callbacks provided, IPv${ipVersion} version`, done => {
-        const task = new ResolveTask(hostname, ipVersion);
-
-        task.on('addresses', onAddressesSpy);
-        task.on('done', onDoneSpy);
-
-        try {
-            task._resolved(error);
-            assert.isTrue(false, '_resolved method must throw an exception, you have an error');
-        } catch (error) {
-            assert.instanceOf(error, AssertionError);
-
-            assert.strictEqual(error.message, 'callbacks array cannot be empty. You have bug in code.');
-
-            setImmediate(() => {
-                assert.isTrue(onAddressesSpy.notCalled);
-                assert.isTrue(onDoneSpy.notCalled);
-
-                assert.isEmpty(task._callbacks);
-
-                done();
-            });
-        }
-    });
-
     it(`must correct call callbacks with appropriate error object, IPv${ipVersion} version`, done => {
         const expectedError     = error;
         const expectedAddresses = undefined;

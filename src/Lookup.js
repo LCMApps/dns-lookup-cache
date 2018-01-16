@@ -47,6 +47,8 @@ class Lookup {
      * @param {number} options.family
      * @param {boolean} options.all
      * @param {Function} callback
+     * @throws {Error}
+     * @returns {{}|undefined}
      */
     run(hostname, options, callback) {
         if (_.isFunction(options)) {
@@ -70,7 +72,7 @@ class Lookup {
                     callback,
                     null,
                     null,
-                    options.family === 6 ? 6 : 4
+                    options.family === Lookup.IPv6 ? Lookup.IPv6 : Lookup.IPv4
                 );
             }
 
@@ -126,7 +128,7 @@ class Lookup {
                 if (this._amountOfResolveTries[hostname] >= Lookup.MAX_AMOUNT_OF_RESOLVE_TRIES) {
                     this._amountOfResolveTries[hostname] = 0;
 
-                    return callback(new Error(`Cannot resolve host ${hostname}. Too deep recursion.`));
+                    return callback(new Error(`Cannot resolve host '${hostname}'. Too deep recursion.`));
                 }
 
                 this._amountOfResolveTries[hostname] += 1;
@@ -174,7 +176,9 @@ class Lookup {
 
         let task = this._tasksManager.find(key);
 
-        if (!task) {
+        if (task) {
+            task.addResolvedCallback(callback);
+        } else {
             task = new ResolveTask(hostname, ipVersion);
 
             this._tasksManager.add(key, task);
@@ -187,10 +191,9 @@ class Lookup {
                 this._tasksManager.done(key);
             });
 
+            task.addResolvedCallback(callback);
             task.run();
         }
-
-        task.addResolvedCallback(callback);
     }
 
     /**

@@ -96,7 +96,7 @@ describe('Unit: Lookup::_resolve', () => {
         assert.instanceOf(callbackStub.getCall(0).args[0], Error);
         assert.strictEqual(
             callbackStub.getCall(0).args[0].message,
-            `Cannot resolve host ${hostname}. Too deep recursion.`
+            `Cannot resolve host '${hostname}'. Too deep recursion.`
         );
 
         assert.isTrue(makeNotFoundErrorStub.notCalled);
