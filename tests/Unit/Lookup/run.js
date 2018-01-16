@@ -62,16 +62,15 @@ describe('Unit: Lookup::run', () => {
 
     it('must correct call _resolveBoth method with appropriate params, cuz family value is undefined', () => {
         const options = {family: undefined};
-        const cb      = () => {};
 
-        const resolveStub     = sinon.stub(lookup, '_resolve');
-        const resolveBothStub = sinon.stub(lookup, '_resolveBoth');
+        const resolveStub     = sinon.stub(lookup, '_resolve').resolves([]);
+        const resolveBothStub = sinon.stub(lookup, '_resolveBoth').resolves([]);
 
-        lookup.run(hostname, options, cb);
+        lookup.run(hostname, options, () => {});
 
         assert.isTrue(resolveStub.notCalled);
 
         assert.isTrue(resolveBothStub.calledOnce);
-        assert.isTrue(resolveBothStub.calledWithExactly(hostname, options, cb));
+        assert.isTrue(resolveBothStub.calledWithExactly(hostname, options));
     });
 });

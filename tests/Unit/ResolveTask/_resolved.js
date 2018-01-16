@@ -1,7 +1,5 @@
 'use strict';
 
-const {AssertionError} = require('assert');
-
 const {assert} = require('chai');
 const sinon    = require('sinon');
 
