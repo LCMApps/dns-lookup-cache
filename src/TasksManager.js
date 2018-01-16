@@ -27,7 +27,7 @@ class TasksManager {
      * @param {string} key
      */
     done(key) {
-        assert(this._tasks.get(key), 'You cannot done task that does not exit. You have a bug.');
+        assert(this._tasks.has(key), 'task cannot be done, cuz it does not exist.');
 
         this._tasks.delete(key);
     }

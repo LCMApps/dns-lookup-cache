@@ -38,12 +38,12 @@ class ResolveTask extends EventEmitter {
 
         assert(
             _.isString(hostname) && hostname.length > 0,
-            `hostname must be not empty string. You provided: ${hostname}. You have bug in code`
+            `hostname must be not empty string, '${hostname}' has been provided.`
         );
 
         assert(
             ipVersion === ResolveTask.IPv4 || ipVersion === ResolveTask.IPv6,
-            `ipVersion must be 4 or 6. You provided: ${ipVersion}. You have bug in code`
+            `ipVersion must be 4 or 6. '${ipVersion}' has been provided.`
         );
 
         this._callbacks = [];
@@ -65,13 +65,20 @@ class ResolveTask extends EventEmitter {
         this._resolver(this._hostname, {ttl: true}, this._resolved);
     }
 
+    /**
+     * @param {Error} error
+     * @param {Address[]} addresses
+     * @emits ResolveTask#addresses array of addresses
+     * @emits ResolveTask#done notification about completion
+     * @private
+     */
     _resolved(error, addresses) {
-        assert(this._callbacks.length > 0, 'callbacks array cannot be empty. You have bug in code.');
+        assert(this._callbacks.length > 0, 'callbacks array cannot be empty.');
 
         if (!error) {
             assert(
                 Array.isArray(addresses) && addresses.length > 0,
-                'addresses must be a not empty array. You have bug in code.'
+                'addresses must be a not empty array.'
             );
 
             addresses.forEach(address => {
