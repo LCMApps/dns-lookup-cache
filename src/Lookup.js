@@ -1,5 +1,7 @@
 'use strict';
 
+const dns = require('dns');
+
 const _     = require('lodash');
 const async = require('async');
 const rr    = require('rr');
@@ -23,9 +25,18 @@ class Lookup {
         return 6;
     }
 
+    /**
+     * @returns {number}
+     */
+    static get MAX_AMOUNT_OF_RESOLVE_TRIES() {
+        return 100;
+    }
+
     constructor() {
         this._addressCache = new AddressCache();
         this._tasksManager = new TasksManager();
+
+        this._amountOfResolveTries = {};
     }
 
     /**
@@ -36,23 +47,40 @@ class Lookup {
      * @param {number} options.family
      * @param {boolean} options.all
      * @param {Function} callback
+     * @throws {Error}
+     * @returns {{}|undefined}
      */
     run(hostname, options, callback) {
-        if (!_.isString(hostname)) {
-            throw new Error('hostname must be a string');
-        }
-
         if (_.isFunction(options)) {
             callback = options;
             options  = {};
         } else if (_.isNumber(options)) {
             options = {family: options};
-        } else if (!_.isObject(options)) {
+        } else if (!_.isPlainObject(options)) {
             throw new Error('options must be an object or an ip version number');
         }
 
         if (!_.isFunction(callback)) {
             throw new Error('callback param must be a function');
+        }
+
+        if (!hostname) {
+            if (options.all) {
+                process.nextTick(callback, null, []);
+            } else {
+                process.nextTick(
+                    callback,
+                    null,
+                    null,
+                    options.family === Lookup.IPv6 ? Lookup.IPv6 : Lookup.IPv4
+                );
+            }
+
+            return {};
+        }
+
+        if (!_.isString(hostname)) {
+            throw new Error('hostname must be a string');
         }
 
         switch (options.family) {
@@ -75,9 +103,13 @@ class Lookup {
      * @private
      */
     _resolve(hostname, options, callback) {
+        this._amountOfResolveTries[hostname] = this._amountOfResolveTries[hostname] || 0;
+
         this._innerResolve(hostname, options.family, (error, records) => {
             if (error) {
-                if (error.code === 'ENODATA') {
+                this._amountOfResolveTries[hostname] = 0;
+
+                if (error.code === dns.NODATA) {
                     return callback(this._makeNotFoundError(hostname, error.syscall));
                 }
 
@@ -93,8 +125,18 @@ class Lookup {
             //
             // So the work around is return undefined for that callbacks and client code should repeat `lookup` call.
             if (!records) {
+                if (this._amountOfResolveTries[hostname] >= Lookup.MAX_AMOUNT_OF_RESOLVE_TRIES) {
+                    this._amountOfResolveTries[hostname] = 0;
+
+                    return callback(new Error(`Cannot resolve host '${hostname}'. Too deep recursion.`));
+                }
+
+                this._amountOfResolveTries[hostname] += 1;
+
                 return this._resolve(hostname, options, callback);
             }
+
+            this._amountOfResolveTries[hostname] = 0;
 
             if (options.all) {
                 const result = records.map(record => {
@@ -136,24 +178,22 @@ class Lookup {
 
         if (task) {
             task.addResolvedCallback(callback);
+        } else {
+            task = new ResolveTask(hostname, ipVersion);
 
-            return;
+            this._tasksManager.add(key, task);
+
+            task.on('addresses', addresses => {
+                this._addressCache.set(key, addresses);
+            });
+
+            task.on('done', () => {
+                this._tasksManager.done(key);
+            });
+
+            task.addResolvedCallback(callback);
+            task.run();
         }
-
-        task = new ResolveTask(hostname, ipVersion);
-
-        this._tasksManager.add(key, task);
-
-        task.addResolvedCallback(callback);
-        task.run();
-
-        task.on('addresses', addresses => {
-            this._addressCache.set(key, addresses);
-        });
-
-        task.on('done', () => {
-            this._tasksManager.done(key);
-        });
     }
 
     /**
@@ -206,7 +246,7 @@ class Lookup {
         return cb => {
             this._resolve(hostname, options, (error, ...records) => {
                 if (error) {
-                    if (error.code === 'ENOTFOUND') {
+                    if (error.code === dns.NOTFOUND) {
                         return cb(null, []);
                     }
 
@@ -225,12 +265,12 @@ class Lookup {
      * @returns {Error}
      */
     _makeNotFoundError(hostname, syscall) {
-        const errorMessage = (syscall ? syscall + ' ' : '') + `ENOTFOUND ${hostname}`;
+        const errorMessage = (syscall ? syscall + ' ' : '') + `${dns.NOTFOUND} ${hostname}`;
         const error        = new Error(errorMessage);
 
         error.hostname = hostname;
-        error.code     = 'ENOTFOUND';
-        error.errno    = 'ENOTFOUND';
+        error.code     = dns.NOTFOUND;
+        error.errno    = dns.NOTFOUND;
 
         if (syscall) {
             error.syscall = syscall;
@@ -240,6 +280,4 @@ class Lookup {
     }
 }
 
-const lookup = new Lookup();
-
-module.exports = lookup.run.bind(lookup);
+module.exports = Lookup;

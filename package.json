@@ -9,13 +9,14 @@
   "license": "SEE LICENSE IN LICENSE.md",
   "scripts": {
     "lint": "./node_modules/.bin/eslint ./",
-    "test": "NODE_ENV=test ./node_modules/.bin/mocha --opts tests/mocha.opts -R spec ./tests/**",
-    "test:coverage": "NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --print both -- --opts tests/mocha.opts -R spec ./tests"
+    "test": "yarn run unit-test && yarn run func-test",
+    "unit-test": "NODE_ENV=test ./node_modules/.bin/mocha --opts tests/mocha.opts -R spec ./tests/Unit/**",
+    "func-test": "NODE_ENV=test ./node_modules/.bin/mocha --opts tests/mocha.opts --timeout 15000 -R spec ./tests/Functional/**",
+    "test:coverage": "NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --print both -- --opts tests/mocha.opts -R spec ./tests/**"
   },
   "dependencies": {
     "async": "2.6.0",
     "lodash": "4.17.4",
-    "request": "^2.83.0",
     "rr": "0.1.0"
   },
   "devDependencies": {
