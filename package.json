@@ -17,7 +17,6 @@
   "dependencies": {
     "async": "2.6.0",
     "lodash": "4.17.4",
-    "request": "^2.83.0",
     "rr": "0.1.0"
   },
   "devDependencies": {
