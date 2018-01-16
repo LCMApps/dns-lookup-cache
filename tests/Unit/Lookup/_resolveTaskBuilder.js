@@ -17,27 +17,13 @@ describe('Unit: Lookup::_resolveTaskBuilder', () => {
         lookup = new Lookup();
     });
 
-    it('must return new function every call', () => {
-        const expectedNumberOfArguments = 1;
-
-        const resolveTask1 = lookup._resolveTaskBuilder();
-        const resolveTask2 = lookup._resolveTaskBuilder();
-
-        assert.instanceOf(resolveTask1, Function);
-        assert.instanceOf(resolveTask2, Function);
-
-        assert.strictEqual(resolveTask1.length, expectedNumberOfArguments);
-        assert.strictEqual(resolveTask2.length, expectedNumberOfArguments);
-
-        assert.notStrictEqual(resolveTask1, resolveTask2);
-    });
-
     it(`must return function that calls '_resolve' under the hood and for ${dns.NOTFOUND} error returns empty array`,
         () => {
+            const expectedRecords = [];
+
             const error = new Error('some error');
             error.code  = dns.NOTFOUND;
 
-            const cbSpy      = sinon.spy();
             const resolveSpy = sinon.stub(lookup, '_resolve').callsFake((hostname, options, cb) => {
                 assert.strictEqual(resolveSpy.getCall(0).args[0], hostname);
                 assert.strictEqual(resolveSpy.getCall(0).args[1], options);
@@ -45,74 +31,65 @@ describe('Unit: Lookup::_resolveTaskBuilder', () => {
                 cb(error);
             });
 
-            const resolveTask = lookup._resolveTaskBuilder(hostname, options);
+            return lookup._resolveTaskBuilder(hostname, options).then(records => {
+                assert.isTrue(resolveSpy.calledOnce);
 
-            resolveTask(cbSpy);
+                assert.strictEqual(resolveSpy.getCall(0).args[0], hostname);
+                assert.strictEqual(resolveSpy.getCall(0).args[1], options);
+                assert.instanceOf(resolveSpy.getCall(0).args[2], Function);
 
-            assert.isTrue(resolveSpy.calledOnce);
-            assert.strictEqual(resolveSpy.getCall(0).args[0], hostname);
-            assert.strictEqual(resolveSpy.getCall(0).args[1], options);
-            assert.instanceOf(resolveSpy.getCall(0).args[2], Function);
-
-            assert.isTrue(cbSpy.calledOnce);
-            assert.isTrue(cbSpy.calledWithExactly(null, []));
+                assert.deepEqual(records, expectedRecords);
+            });
         }
     );
 
     it('must return function that calls \'_resolve\' under the hood and in case error calls callback with an error',
-        () => {
-            const error = new Error('some error');
+        done => {
+            const expectedError = new Error('some error');
 
-            const cbSpy      = sinon.spy();
             const resolveSpy = sinon.stub(lookup, '_resolve').callsFake((hostname, options, cb) => {
                 assert.strictEqual(resolveSpy.getCall(0).args[0], hostname);
                 assert.strictEqual(resolveSpy.getCall(0).args[1], options);
 
-                cb(error);
+                cb(expectedError);
             });
 
-            const resolveTask = lookup._resolveTaskBuilder(hostname, options);
+            lookup._resolveTaskBuilder(hostname, options)
+                .catch(error => {
+                    assert.isTrue(resolveSpy.calledOnce);
 
-            resolveTask(cbSpy);
+                    assert.strictEqual(resolveSpy.getCall(0).args[0], hostname);
+                    assert.strictEqual(resolveSpy.getCall(0).args[1], options);
+                    assert.instanceOf(resolveSpy.getCall(0).args[2], Function);
 
-            assert.isTrue(resolveSpy.calledOnce);
-            assert.strictEqual(resolveSpy.getCall(0).args[0], hostname);
-            assert.strictEqual(resolveSpy.getCall(0).args[1], options);
-            assert.instanceOf(resolveSpy.getCall(0).args[2], Function);
+                    assert.instanceOf(error, Error);
+                    assert.strictEqual(error.message, expectedError.message);
 
-            assert.isTrue(cbSpy.calledOnce);
-            assert.strictEqual(cbSpy.getCall(0).args.length, 1);
-            assert.instanceOf(cbSpy.getCall(0).args[0], Error);
-            assert.strictEqual(cbSpy.getCall(0).args[0].message, error.message);
+                    done();
+                });
         }
     );
 
     it('must return function that calls \'_resolve\' under the hood and in case no error calls callback with results',
         () => {
             const error   = null;
-            const results = [Symbol(), Symbol()];
+            const exprectedRecords = [Symbol(), Symbol()];
 
-            const cbSpy      = sinon.spy();
             const resolveSpy = sinon.stub(lookup, '_resolve').callsFake((hostname, options, cb) => {
                 assert.strictEqual(resolveSpy.getCall(0).args[0], hostname);
                 assert.strictEqual(resolveSpy.getCall(0).args[1], options);
 
-                cb(error, ...results);
+                cb(error, ...exprectedRecords);
             });
 
-            const resolveTask = lookup._resolveTaskBuilder(hostname, options);
+            return lookup._resolveTaskBuilder(hostname, options).then(records => {
+                assert.isTrue(resolveSpy.calledOnce);
+                assert.strictEqual(resolveSpy.getCall(0).args[0], hostname);
+                assert.strictEqual(resolveSpy.getCall(0).args[1], options);
+                assert.instanceOf(resolveSpy.getCall(0).args[2], Function);
 
-            resolveTask(cbSpy);
-
-            assert.isTrue(resolveSpy.calledOnce);
-            assert.strictEqual(resolveSpy.getCall(0).args[0], hostname);
-            assert.strictEqual(resolveSpy.getCall(0).args[1], options);
-            assert.instanceOf(resolveSpy.getCall(0).args[2], Function);
-
-            assert.isTrue(cbSpy.calledOnce);
-            assert.strictEqual(cbSpy.getCall(0).args.length, 3);
-            assert.isNull(cbSpy.getCall(0).args[0]);
-            assert.deepEqual(cbSpy.getCall(0).args.slice(1), results);
+                assert.deepEqual(records, exprectedRecords);
+            });
         }
     );
 });

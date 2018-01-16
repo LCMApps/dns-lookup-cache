@@ -15,11 +15,11 @@
     "test:coverage": "NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --print both -- --opts tests/mocha.opts -R spec ./tests/**"
   },
   "dependencies": {
-    "async": "2.6.0",
     "lodash": "4.17.4",
     "rr": "0.1.0"
   },
   "devDependencies": {
+    "async": "2.6.0",
     "chai": "4.1.2",
     "eslint": "4.15.0",
     "istanbul": "0.4.5",
