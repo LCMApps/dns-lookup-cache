@@ -1,6 +1,5 @@
 'use strict';
 
-const async    = require('async');
 const sinon    = require('sinon');
 const {assert} = require('chai');
 
@@ -24,12 +23,16 @@ describe('Func: Lookup::_innerResolve', () => {
         const taskAddResolvedCallbackSpy = sinon.spy(ResolveTask.prototype, 'addResolvedCallback');
         const taskRunSpy                 = sinon.spy(ResolveTask.prototype, 'run');
 
-        async.parallel([
-            cb => lookup._innerResolve(addresses.INET_HOST1, ipVersion, cb),
-            cb => lookup._innerResolve(addresses.INET_HOST2, ipVersion, cb)
-        ], (error, results) => {
-            assert.ifError(error);
+        const resolveCallback = (resolve, reject) => (error, result) => error ? reject(error) : resolve(result);
 
+        Promise.all([
+            new Promise((resolve, reject) => {
+                lookup._innerResolve(addresses.INET_HOST1, ipVersion, resolveCallback(resolve, reject));
+            }),
+            new Promise((resolve, reject) => {
+                lookup._innerResolve(addresses.INET_HOST2, ipVersion, resolveCallback(resolve, reject));
+            }),
+        ]).then(() => {
             assert.isTrue(addressCacheFindSpy.calledTwice);
 
             assert.isTrue(addressCacheSetSpy.calledTwice);
@@ -54,6 +57,8 @@ describe('Func: Lookup::_innerResolve', () => {
             taskRunSpy.restore();
 
             done();
+        }).catch(error => {
+            assert.ifError(error);
         });
     });
 
@@ -72,12 +77,16 @@ describe('Func: Lookup::_innerResolve', () => {
         const taskAddResolvedCallbackSpy = sinon.spy(ResolveTask.prototype, 'addResolvedCallback');
         const taskRunSpy                 = sinon.spy(ResolveTask.prototype, 'run');
 
-        async.parallel([
-            cb => lookup._innerResolve(addresses.INET_HOST1, ipVersion, cb),
-            cb => lookup._innerResolve(addresses.INET_HOST1, ipVersion, cb)
-        ], error => {
-            assert.ifError(error);
+        const resolveCallback = (resolve, reject) => (error, result) => error ? reject(error) : resolve(result);
 
+        Promise.all([
+            new Promise((resolve, reject) => {
+                lookup._innerResolve(addresses.INET_HOST1, ipVersion, resolveCallback(resolve, reject));
+            }),
+            new Promise((resolve, reject) => {
+                lookup._innerResolve(addresses.INET_HOST1, ipVersion, resolveCallback(resolve, reject));
+            }),
+        ]).then(() => {
             assert.isTrue(addressCacheFindSpy.calledTwice);
             assert.isTrue(addressCacheFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
 
@@ -109,6 +118,8 @@ describe('Func: Lookup::_innerResolve', () => {
             taskRunSpy.restore();
 
             done();
+        }).catch(error => {
+            assert.ifError(error);
         });
     });
 });
