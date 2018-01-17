@@ -158,12 +158,10 @@ describe('Unit: Lookup::_innerResolve', () => {
             () => {
                 const expectedAddresses          = Symbol();
                 const resolveTaskRunSpy          = sinon.spy();
-                const taskAddResolvedCallbackSpy = sinon.spy();
 
                 const task = new EventEmitter();
 
                 task.run                 = resolveTaskRunSpy;
-                task.addResolvedCallback = taskAddResolvedCallbackSpy;
 
                 const resolveTaskOnSpy = sinon.spy(task, 'on');
 
@@ -252,12 +250,10 @@ describe('Unit: Lookup::_innerResolve', () => {
             done => {
                 const expectedError              = new Error('error');
                 const resolveTaskRunSpy          = sinon.spy();
-                const taskAddResolvedCallbackSpy = sinon.spy();
 
                 const task = new EventEmitter();
 
                 task.run                 = resolveTaskRunSpy;
-                task.addResolvedCallback = taskAddResolvedCallbackSpy;
 
                 const resolveTaskOnSpy = sinon.spy(task, 'on');
 

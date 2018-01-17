@@ -25,22 +25,29 @@ describe('Unit: Lookup::_resolve', () => {
         innerResolveStub.restore();
     });
 
-    it('must correct call callback with adjusted error', done => {
-        const error   = new Error('some error');
-        error.syscall = 'some-sys-call';
-        error.code    = dns.NODATA;
+    it('must correct rejects with adjusted error', done => {
+        const err   = new Error('some error');
+        err.syscall = 'some-sys-call';
+        err.code    = dns.NODATA;
 
-        const expectedErrorMessage = `${error.syscall} ENOTFOUND ${hostname}`;
+        const expectedErrorMessage    = new Error(`${err.syscall} ENOTFOUND ${hostname}`);
+        expectedErrorMessage.hostname = hostname;
+        expectedErrorMessage.syscall  = 'some-sys-call';
+        expectedErrorMessage.code     = dns.NOTFOUND;
+        expectedErrorMessage.errno    = dns.NOTFOUND;
 
         const expectedNumberOfResolveTriesAfterError = 0;
 
         makeNotFoundErrorStub = sinon.spy(Lookup.prototype, '_makeNotFoundError');
-        innerResolveStub      = sinon.stub(Lookup.prototype, '_innerResolve').rejects(error);
+        innerResolveStub      = sinon.stub(Lookup.prototype, '_innerResolve').rejects(err);
 
         lookup._resolve(hostname, {family: 4})
             .catch(error => {
                 assert.instanceOf(error, Error);
-                assert.strictEqual(error.message, expectedErrorMessage);
+                assert.strictEqual(error.message, expectedErrorMessage.message);
+                assert.strictEqual(error.syscall, expectedErrorMessage.syscall);
+                assert.strictEqual(error.code, expectedErrorMessage.code);
+                assert.strictEqual(error.errno, expectedErrorMessage.code);
 
                 assert.isTrue(makeNotFoundErrorStub.calledOnce);
                 assert.isTrue(makeNotFoundErrorStub.calledWithExactly(hostname, error.syscall));
@@ -51,7 +58,7 @@ describe('Unit: Lookup::_resolve', () => {
             });
     });
 
-    it('must correct call callback with original error', done => {
+    it('must correct rejects with original error', done => {
         const expectedError = new Error('expected error message');
 
         const expectedNumberOfResolveTriesAfterError = 0;
@@ -94,7 +101,7 @@ describe('Unit: Lookup::_resolve', () => {
             });
     });
 
-    it('must return next IP address every call (RR algorithm) ({all: false} option has been provided)', () => {
+    it('must resolve next IP address every call (RR algorithm) ({all: false} option has been provided)', () => {
         const records = [
             {address: 1, family: 4},
             {address: 2, family: 4}
@@ -126,7 +133,7 @@ describe('Unit: Lookup::_resolve', () => {
             });
     });
 
-    it('must return all IP addresses ({all: true} options has been provided)', () => {
+    it('must resolves all IP addresses ({all: true} options has been provided)', () => {
         const records         = [
             {address: 1, family: 4, expiredTime: Date.now()},
             {address: 2, family: 4, expiredTime: Date.now()}
