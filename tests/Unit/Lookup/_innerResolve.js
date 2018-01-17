@@ -6,13 +6,13 @@ const {assert}   = require('chai');
 const proxyquire = require('proxyquire');
 const sinon      = require('sinon');
 
-const addresses   = require('../../addresses');
+const addresses = require('../../addresses');
 
 describe('Unit: Lookup::_innerResolve', () => {
     const ipVersions = [4, 6];
 
     ipVersions.forEach(ipVersion => {
-        it(`must correct return cached value for IPv${ipVersion}`, done => {
+        it(`must correct return cached value for IPv${ipVersion}`, () => {
             const cachedAddress = {};
 
             const addressCacheFindSpy = sinon.spy(() => cachedAddress);
@@ -42,177 +42,292 @@ describe('Unit: Lookup::_innerResolve', () => {
                 './ResolveTask':  ResolveTask
             });
 
-            const callbackSpy = sinon.spy();
-
             const lookup = new Lookup();
 
-            lookup._innerResolve(addresses.INET_HOST1, ipVersion, callbackSpy);
+            return lookup._innerResolve(addresses.INET_HOST1, ipVersion)
+                .then(result => {
+                    assert.deepEqual(result, cachedAddress);
 
-            setImmediate(() => {
-                assert.isTrue(addressCacheFindSpy.calledOnce);
-                assert.isTrue(addressCacheFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
-                assert.isTrue(addressCacheSetSpy.notCalled);
+                    assert.isTrue(addressCacheFindSpy.calledOnce);
+                    assert.isTrue(addressCacheFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
+                    assert.isTrue(addressCacheSetSpy.notCalled);
 
-                assert.isTrue(resolveTaskRunSpy.notCalled);
+                    assert.isTrue(resolveTaskRunSpy.notCalled);
 
-                assert.isTrue(tasksManagerFindSpy.notCalled);
-                assert.isTrue(tasksManagerAddSpy.notCalled);
-                assert.isTrue(tasksManagerDoneSpy.notCalled);
-
-                assert.isTrue(callbackSpy.calledOnce);
-                assert.isTrue(callbackSpy.calledWithExactly(null, cachedAddress));
-
-                done();
-            });
+                    assert.isTrue(tasksManagerFindSpy.notCalled);
+                    assert.isTrue(tasksManagerAddSpy.notCalled);
+                    assert.isTrue(tasksManagerDoneSpy.notCalled);
+                });
         });
     });
 
     ipVersions.forEach(ipVersion => {
-        it(`must correct add callback for the found task for IPv${ipVersion}`, done => {
-            const resolveTaskRunSpy          = sinon.spy();
-            const taskAddResolvedCallbackSpy = sinon.spy();
+        it(`must correct create task on first call, and add listeners for the same task on second (IPv${ipVersion})`,
+            () => {
+                const expectedAddresses = [];
+                const resolveTaskRunSpy = sinon.spy();
 
-            class ResolveTask {}
-            ResolveTask.prototype.run                 = resolveTaskRunSpy;
-            ResolveTask.prototype.addResolvedCallback = taskAddResolvedCallbackSpy;
+                const constructorStub = sinon.stub();
 
-            const addressCacheFindSpy = sinon.spy(() => undefined);
-            const addressCacheSetSpy  = sinon.spy();
+                const task = new EventEmitter();
+                task.run   = resolveTaskRunSpy;
 
-            const tasksManagerFindSpy = sinon.spy(() => new ResolveTask());
-            const tasksManagerAddSpy  = sinon.spy();
-            const tasksManagerDoneSpy = sinon.spy();
+                const resolveTaskOnSpy = sinon.spy(task, 'on');
 
-            class AddressCache {}
-            AddressCache.prototype.find = addressCacheFindSpy;
-            AddressCache.prototype.set  = addressCacheSetSpy;
+                const addressCacheFindSpy = sinon.spy(() => undefined);
+                const addressCacheSetSpy  = sinon.spy();
 
-            class TasksManager {}
-            TasksManager.prototype.find = tasksManagerFindSpy;
-            TasksManager.prototype.add  = tasksManagerAddSpy;
-            TasksManager.prototype.done = tasksManagerDoneSpy;
+                const tasksManagerFindSpy = sinon.stub();
+                tasksManagerFindSpy.onFirstCall().callsFake(() => undefined);
+                tasksManagerFindSpy.onSecondCall().callsFake(() => task);
 
-            const Lookup = proxyquire('../../../src/Lookup', {
-                './AddressCache': AddressCache,
-                './TasksManager': TasksManager,
-                './ResolveTask':  ResolveTask
-            });
+                const tasksManagerAddSpy  = sinon.spy();
+                const tasksManagerDoneSpy = sinon.spy();
 
-            const callbackSpy = sinon.spy();
+                class AddressCache {}
+                AddressCache.prototype.find = addressCacheFindSpy;
+                AddressCache.prototype.set  = addressCacheSetSpy;
 
-            const lookup = new Lookup();
+                class ResolveTask {
+                    constructor(hostname, ipVersion) {
+                        constructorStub(hostname, ipVersion);
 
-            lookup._innerResolve(addresses.INET_HOST1, ipVersion, callbackSpy);
-
-            setImmediate(() => {
-                assert.isTrue(addressCacheFindSpy.calledOnce);
-                assert.isTrue(addressCacheFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
-
-                assert.isTrue(tasksManagerFindSpy.calledOnce);
-                assert.isTrue(tasksManagerFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
-                assert.isTrue(tasksManagerAddSpy.notCalled);
-                assert.isTrue(tasksManagerDoneSpy.notCalled);
-
-                assert.isTrue(resolveTaskRunSpy.notCalled);
-
-                assert.isTrue(taskAddResolvedCallbackSpy.calledOnce);
-                assert.isTrue(taskAddResolvedCallbackSpy.calledWithExactly(callbackSpy));
-
-                assert.isTrue(callbackSpy.notCalled);
-
-                done();
-            });
-        });
-    });
-
-    ipVersions.forEach(ipVersion => {
-        it(`must correct create task, add callback to it, run for IPv${ipVersion} and correct handle events`, done => {
-            const expectedAddresses          = Symbol();
-            const resolveTaskRunSpy          = sinon.spy();
-            const taskAddResolvedCallbackSpy = sinon.spy();
-
-            const task = new EventEmitter();
-
-            task.run                 = resolveTaskRunSpy;
-            task.addResolvedCallback = taskAddResolvedCallbackSpy;
-
-            const resolveTaskOnSpy = sinon.spy(task, 'on');
-
-            class ResolveTask {
-                constructor() {
-                    return task;
+                        return task;
+                    }
                 }
-            }
 
-            const addressCacheFindSpy = sinon.spy(() => undefined);
-            const addressCacheSetSpy  = sinon.spy();
+                class TasksManager {}
+                TasksManager.prototype.find = tasksManagerFindSpy;
+                TasksManager.prototype.add  = tasksManagerAddSpy;
+                TasksManager.prototype.done = tasksManagerDoneSpy;
 
-            const tasksManagerFindSpy = sinon.spy(() => undefined);
-            const tasksManagerAddSpy  = sinon.spy();
-            const tasksManagerDoneSpy = sinon.spy();
+                const Lookup = proxyquire('../../../src/Lookup', {
+                    './AddressCache': AddressCache,
+                    './TasksManager': TasksManager,
+                    './ResolveTask':  ResolveTask
+                });
 
-            class AddressCache {}
-            AddressCache.prototype.find = addressCacheFindSpy;
-            AddressCache.prototype.set  = addressCacheSetSpy;
+                const lookup = new Lookup();
 
-            class TasksManager {}
-            TasksManager.prototype.find = tasksManagerFindSpy;
-            TasksManager.prototype.add  = tasksManagerAddSpy;
-            TasksManager.prototype.done = tasksManagerDoneSpy;
+                setImmediate(() => {
+                    task.emit('addresses', expectedAddresses);
+                });
 
-            const Lookup = proxyquire('../../../src/Lookup', {
-                './AddressCache': AddressCache,
-                './TasksManager': TasksManager,
-                './ResolveTask':  ResolveTask
+                return Promise.all([
+                    lookup._innerResolve(addresses.INET_HOST1, ipVersion),
+                    lookup._innerResolve(addresses.INET_HOST1, ipVersion)
+                ]).then(results => {
+                    assert.deepEqual(results, [expectedAddresses, expectedAddresses]);
+
+                    assert.isTrue(addressCacheFindSpy.calledTwice);
+                    assert.isTrue(addressCacheFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
+
+                    assert.isTrue(addressCacheSetSpy.calledOnce);
+
+                    assert.isTrue(constructorStub.calledOnce);
+                    assert.isTrue(constructorStub.calledWithExactly(addresses.INET_HOST1, ipVersion));
+
+                    assert.isTrue(resolveTaskRunSpy.calledOnce);
+
+                    assert.strictEqual(resolveTaskOnSpy.callCount, 5);
+
+                    assert.strictEqual(resolveTaskOnSpy.getCall(0).args[0], 'addresses');
+                    assert.instanceOf(resolveTaskOnSpy.getCall(0).args[1], Function);
+
+                    assert.strictEqual(resolveTaskOnSpy.getCall(1).args[0], 'error');
+                    assert.instanceOf(resolveTaskOnSpy.getCall(1).args[1], Function);
+
+                    assert.strictEqual(resolveTaskOnSpy.getCall(2).args[0], 'addresses');
+                    assert.instanceOf(resolveTaskOnSpy.getCall(2).args[1], Function);
+
+                    assert.strictEqual(resolveTaskOnSpy.getCall(3).args[0], 'error');
+                    assert.instanceOf(resolveTaskOnSpy.getCall(3).args[1], Function);
+
+                    assert.strictEqual(resolveTaskOnSpy.getCall(4).args[0], 'addresses');
+                    assert.instanceOf(resolveTaskOnSpy.getCall(4).args[1], Function);
+
+                    assert.isTrue(tasksManagerFindSpy.calledTwice);
+                    assert.isTrue(tasksManagerAddSpy.calledOnce);
+                    assert.isTrue(tasksManagerDoneSpy.calledOnce);
+                });
+            });
+    });
+
+    ipVersions.forEach(ipVersion => {
+        it(`must correct create task, add to task manager, run for IPv${ipVersion} and correct handle address event`,
+            () => {
+                const expectedAddresses          = Symbol();
+                const resolveTaskRunSpy          = sinon.spy();
+
+                const task = new EventEmitter();
+
+                task.run                 = resolveTaskRunSpy;
+
+                const resolveTaskOnSpy = sinon.spy(task, 'on');
+
+                class ResolveTask {
+                    constructor() {
+                        return task;
+                    }
+                }
+
+                const addressCacheFindSpy = sinon.spy(() => undefined);
+                const addressCacheSetSpy  = sinon.spy();
+
+                const tasksManagerFindSpy = sinon.spy(() => undefined);
+                const tasksManagerAddSpy  = sinon.spy();
+                const tasksManagerDoneSpy = sinon.spy();
+
+                class AddressCache {}
+                AddressCache.prototype.find = addressCacheFindSpy;
+                AddressCache.prototype.set  = addressCacheSetSpy;
+
+                class TasksManager {}
+                TasksManager.prototype.find = tasksManagerFindSpy;
+                TasksManager.prototype.add  = tasksManagerAddSpy;
+                TasksManager.prototype.done = tasksManagerDoneSpy;
+
+                const Lookup = proxyquire('../../../src/Lookup', {
+                    './AddressCache': AddressCache,
+                    './TasksManager': TasksManager,
+                    './ResolveTask':  ResolveTask
+                });
+
+                const lookup = new Lookup();
+
+                setImmediate(() => {
+                    task.emit('addresses', expectedAddresses);
+                });
+
+                return lookup._innerResolve(addresses.INET_HOST1, ipVersion)
+                    .then(result => {
+                        assert.deepEqual(result, expectedAddresses);
+
+                        assert.isTrue(addressCacheFindSpy.calledOnce);
+                        assert.isTrue(
+                            addressCacheFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`)
+                        );
+
+                        assert.isTrue(addressCacheSetSpy.calledOnce);
+                        assert.strictEqual(
+                            addressCacheSetSpy.getCall(0).args[0],
+                            `${addresses.INET_HOST1}_${ipVersion}`
+                        );
+                        assert.strictEqual(addressCacheSetSpy.getCall(0).args[1], expectedAddresses);
+
+                        assert.isTrue(tasksManagerFindSpy.calledOnce);
+                        assert.isTrue(tasksManagerFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
+
+                        assert.isTrue(tasksManagerAddSpy.calledOnce);
+                        assert.strictEqual(
+                            tasksManagerAddSpy.getCall(0).args[0],
+                            `${addresses.INET_HOST1}_${ipVersion}`
+                        );
+                        assert.strictEqual(tasksManagerAddSpy.getCall(0).args[1], task);
+
+                        assert.isTrue(tasksManagerDoneSpy.calledOnce);
+                        assert.isTrue(
+                            tasksManagerDoneSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`)
+                        );
+
+                        assert.isTrue(resolveTaskRunSpy.calledOnce);
+                        assert.isTrue(resolveTaskRunSpy.calledWithExactly());
+
+                        assert.isTrue(resolveTaskOnSpy.calledThrice);
+
+                        assert.strictEqual(resolveTaskOnSpy.getCall(0).args[0], 'addresses');
+                        assert.instanceOf(resolveTaskOnSpy.getCall(0).args[1], Function);
+
+                        assert.strictEqual(resolveTaskOnSpy.getCall(1).args[0], 'error');
+                        assert.instanceOf(resolveTaskOnSpy.getCall(1).args[1], Function);
+
+                        assert.strictEqual(resolveTaskOnSpy.getCall(2).args[0], 'addresses');
+                        assert.instanceOf(resolveTaskOnSpy.getCall(2).args[1], Function);
+                    });
             });
 
-            const callbackSpy = sinon.spy();
+        it(`must correct create task, add to task manager, run for IPv${ipVersion} and correct handle error event`,
+            done => {
+                const expectedError              = new Error('error');
+                const resolveTaskRunSpy          = sinon.spy();
 
-            const lookup = new Lookup();
+                const task = new EventEmitter();
 
-            lookup._innerResolve(addresses.INET_HOST1, ipVersion, callbackSpy);
+                task.run                 = resolveTaskRunSpy;
 
-            setImmediate(() => {
-                task.emit('addresses', expectedAddresses);
-                task.emit('done');
+                const resolveTaskOnSpy = sinon.spy(task, 'on');
+
+                class ResolveTask {
+                    constructor() {
+                        return task;
+                    }
+                }
+
+                const addressCacheFindSpy = sinon.spy(() => undefined);
+                const addressCacheSetSpy  = sinon.spy();
+
+                const tasksManagerFindSpy = sinon.spy(() => undefined);
+                const tasksManagerAddSpy  = sinon.spy();
+                const tasksManagerDoneSpy = sinon.spy();
+
+                class AddressCache {}
+                AddressCache.prototype.find = addressCacheFindSpy;
+                AddressCache.prototype.set  = addressCacheSetSpy;
+
+                class TasksManager {}
+                TasksManager.prototype.find = tasksManagerFindSpy;
+                TasksManager.prototype.add  = tasksManagerAddSpy;
+                TasksManager.prototype.done = tasksManagerDoneSpy;
+
+                const Lookup = proxyquire('../../../src/Lookup', {
+                    './AddressCache': AddressCache,
+                    './TasksManager': TasksManager,
+                    './ResolveTask':  ResolveTask
+                });
+
+                const lookup = new Lookup();
+
+                setImmediate(() => {
+                    task.emit('error', expectedError);
+                });
+
+                lookup._innerResolve(addresses.INET_HOST1, ipVersion)
+                    .catch(error => {
+                        assert.instanceOf(error, Error);
+                        assert.strictEqual(error.message, expectedError.message);
+
+                        assert.isTrue(addressCacheFindSpy.calledOnce);
+                        assert.isTrue(addressCacheFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
+
+                        assert.isTrue(addressCacheSetSpy.notCalled);
+
+                        assert.isTrue(tasksManagerFindSpy.calledOnce);
+                        assert.isTrue(tasksManagerFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
+
+                        assert.isTrue(tasksManagerAddSpy.calledOnce);
+                        assert.strictEqual(
+                            tasksManagerAddSpy.getCall(0).args[0], `${addresses.INET_HOST1}_${ipVersion}`
+                        );
+                        assert.strictEqual(tasksManagerAddSpy.getCall(0).args[1], task);
+
+                        assert.isTrue(tasksManagerDoneSpy.notCalled);
+
+                        assert.isTrue(resolveTaskRunSpy.calledOnce);
+                        assert.isTrue(resolveTaskRunSpy.calledWithExactly());
+
+                        assert.isTrue(resolveTaskOnSpy.calledThrice);
+
+                        assert.strictEqual(resolveTaskOnSpy.getCall(0).args[0], 'addresses');
+                        assert.instanceOf(resolveTaskOnSpy.getCall(0).args[1], Function);
+
+                        assert.strictEqual(resolveTaskOnSpy.getCall(1).args[0], 'error');
+                        assert.instanceOf(resolveTaskOnSpy.getCall(1).args[1], Function);
+
+                        assert.strictEqual(resolveTaskOnSpy.getCall(2).args[0], 'addresses');
+                        assert.instanceOf(resolveTaskOnSpy.getCall(2).args[1], Function);
+
+                        done();
+                    });
             });
-
-            setImmediate(() => {
-                assert.isTrue(addressCacheFindSpy.calledOnce);
-                assert.isTrue(addressCacheFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
-
-                assert.isTrue(addressCacheSetSpy.calledOnce);
-                assert.strictEqual(addressCacheSetSpy.getCall(0).args[0], `${addresses.INET_HOST1}_${ipVersion}`);
-                assert.strictEqual(addressCacheSetSpy.getCall(0).args[1], expectedAddresses);
-
-                assert.isTrue(tasksManagerFindSpy.calledOnce);
-                assert.isTrue(tasksManagerFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
-
-                assert.isTrue(tasksManagerAddSpy.calledOnce);
-                assert.strictEqual(tasksManagerAddSpy.getCall(0).args[0], `${addresses.INET_HOST1}_${ipVersion}`);
-                assert.strictEqual(tasksManagerAddSpy.getCall(0).args[1], task);
-
-                assert.isTrue(tasksManagerDoneSpy.calledOnce);
-                assert.isTrue(tasksManagerDoneSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
-
-                assert.isTrue(resolveTaskRunSpy.calledOnce);
-                assert.isTrue(resolveTaskRunSpy.calledWithExactly());
-
-                assert.isTrue(taskAddResolvedCallbackSpy.calledOnce);
-                assert.isTrue(taskAddResolvedCallbackSpy.calledWithExactly(callbackSpy));
-
-                assert.isTrue(callbackSpy.notCalled);
-
-                assert.isTrue(resolveTaskOnSpy.calledTwice);
-
-                assert.strictEqual(resolveTaskOnSpy.getCall(0).args[0], 'addresses');
-                assert.instanceOf(resolveTaskOnSpy.getCall(0).args[1], Function);
-
-                assert.strictEqual(resolveTaskOnSpy.getCall(1).args[0], 'done');
-                assert.instanceOf(resolveTaskOnSpy.getCall(1).args[1], Function);
-
-                done();
-            });
-        });
     });
 });

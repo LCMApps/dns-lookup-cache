@@ -21,13 +21,13 @@ describe('Unit: Lookup::_resolveBoth', () => {
         const expectedError = new Error('some error');
         const options       = {};
 
-        const resolveTaskBuilderStub = sinon.stub(lookup, '_resolveTaskBuilder');
-        resolveTaskBuilderStub.onCall(0).callsFake(() => {
+        const resolveStub = sinon.stub(lookup, '_resolve');
+        resolveStub.onCall(0).callsFake(() => {
             return new Promise((resolve, reject) => {
                 reject(expectedError);
             });
         });
-        resolveTaskBuilderStub.onCall(1).callsFake(() => {
+        resolveStub.onCall(1).callsFake(() => {
             return new Promise(resolve => resolve());
         });
 
@@ -35,17 +35,17 @@ describe('Unit: Lookup::_resolveBoth', () => {
 
         lookup._resolveBoth(hostname, options)
             .catch(error => {
-                assert.isTrue(resolveTaskBuilderStub.calledTwice);
+                assert.isTrue(resolveStub.calledTwice);
 
-                assert.strictEqual(resolveTaskBuilderStub.getCall(0).args[0], hostname);
-                assert.strictEqual(resolveTaskBuilderStub.getCall(1).args[0], hostname);
+                assert.strictEqual(resolveStub.getCall(0).args[0], hostname);
+                assert.strictEqual(resolveStub.getCall(1).args[0], hostname);
 
                 assert.deepEqual(
-                    resolveTaskBuilderStub.getCall(0).args[1],
+                    resolveStub.getCall(0).args[1],
                     Object.assign({}, options, {family: Lookup.IPv4})
                 );
                 assert.deepEqual(
-                    resolveTaskBuilderStub.getCall(1).args[1],
+                    resolveStub.getCall(1).args[1],
                     Object.assign({}, options, {family: Lookup.IPv6})
                 );
 
@@ -62,11 +62,11 @@ describe('Unit: Lookup::_resolveBoth', () => {
         const expectedError = new Error('some error');
         const options       = {};
 
-        const resolveTaskBuilderStub = sinon.stub(lookup, '_resolveTaskBuilder');
-        resolveTaskBuilderStub.onCall(0).callsFake(() => {
+        const resolveStub = sinon.stub(lookup, '_resolve');
+        resolveStub.onCall(0).callsFake(() => {
             return new Promise(resolve => resolve());
         });
-        resolveTaskBuilderStub.onCall(1).callsFake(() => {
+        resolveStub.onCall(1).callsFake(() => {
             return new Promise((resolve, reject) => {
                 reject(expectedError);
             });
@@ -75,17 +75,17 @@ describe('Unit: Lookup::_resolveBoth', () => {
         const makeNotFoundErrorSpy = sinon.spy(lookup, '_makeNotFoundError');
 
         lookup._resolveBoth(hostname, options).catch(error => {
-            assert.isTrue(resolveTaskBuilderStub.calledTwice);
+            assert.isTrue(resolveStub.calledTwice);
 
-            assert.strictEqual(resolveTaskBuilderStub.getCall(0).args[0], hostname);
-            assert.strictEqual(resolveTaskBuilderStub.getCall(1).args[0], hostname);
+            assert.strictEqual(resolveStub.getCall(0).args[0], hostname);
+            assert.strictEqual(resolveStub.getCall(1).args[0], hostname);
 
             assert.deepEqual(
-                resolveTaskBuilderStub.getCall(0).args[1],
+                resolveStub.getCall(0).args[1],
                 Object.assign({}, options, {family: Lookup.IPv4})
             );
             assert.deepEqual(
-                resolveTaskBuilderStub.getCall(1).args[1],
+                resolveStub.getCall(1).args[1],
                 Object.assign({}, options, {family: Lookup.IPv6})
             );
 
@@ -110,25 +110,25 @@ describe('Unit: Lookup::_resolveBoth', () => {
             expectedError.code     = dns.NOTFOUND;
             expectedError.errno    = dns.NOTFOUND;
 
-            const resolveTaskBuilderStub = sinon.stub(lookup, '_resolveTaskBuilder').callsFake(() => {
+            const resolveStub = sinon.stub(lookup, '_resolve').callsFake(() => {
                 return new Promise(resolve => resolve([]));
             });
 
             const makeNotFoundErrorSpy = sinon.spy(lookup, '_makeNotFoundError');
 
             lookup._resolveBoth(hostname, options).catch(error => {
-                assert.isTrue(resolveTaskBuilderStub.calledTwice);
+                assert.isTrue(resolveStub.calledTwice);
 
-                assert.strictEqual(resolveTaskBuilderStub.getCall(0).args[0], hostname);
-                assert.strictEqual(resolveTaskBuilderStub.getCall(1).args[0], hostname);
+                assert.strictEqual(resolveStub.getCall(0).args[0], hostname);
+                assert.strictEqual(resolveStub.getCall(1).args[0], hostname);
 
                 assert.deepEqual(
-                    resolveTaskBuilderStub.getCall(0).args[1],
+                    resolveStub.getCall(0).args[1],
                     Object.assign({}, options, {family: Lookup.IPv4})
                 );
 
                 assert.deepEqual(
-                    resolveTaskBuilderStub.getCall(1).args[1],
+                    resolveStub.getCall(1).args[1],
                     Object.assign({}, options, {family: Lookup.IPv6})
                 );
 
@@ -161,8 +161,8 @@ describe('Unit: Lookup::_resolveBoth', () => {
 
         const expectedRecords = ipv4records.concat(ipv6records);
 
-        const resolveTaskBuilderStub = sinon.stub(lookup, '_resolveTaskBuilder');
-        resolveTaskBuilderStub.onCall(0).callsFake(() => {
+        const resolveStub = sinon.stub(lookup, '_resolve');
+        resolveStub.onCall(0).callsFake(() => {
             return new Promise(resolve => {
                 setTimeout(() => {
                     resolve(ipv4records);
@@ -170,7 +170,7 @@ describe('Unit: Lookup::_resolveBoth', () => {
             });
         });
 
-        resolveTaskBuilderStub.onCall(1).callsFake(() => {
+        resolveStub.onCall(1).callsFake(() => {
             return new Promise(resolve => {
                 setTimeout(() => {
                     resolve(ipv6records);
@@ -181,18 +181,18 @@ describe('Unit: Lookup::_resolveBoth', () => {
         const makeNotFoundErrorSpy = sinon.spy(lookup, '_makeNotFoundError');
 
         return lookup._resolveBoth(hostname, options).then(records => {
-            assert.isTrue(resolveTaskBuilderStub.calledTwice);
+            assert.isTrue(resolveStub.calledTwice);
 
-            assert.strictEqual(resolveTaskBuilderStub.getCall(0).args[0], hostname);
-            assert.strictEqual(resolveTaskBuilderStub.getCall(1).args[0], hostname);
+            assert.strictEqual(resolveStub.getCall(0).args[0], hostname);
+            assert.strictEqual(resolveStub.getCall(1).args[0], hostname);
 
             assert.deepEqual(
-                resolveTaskBuilderStub.getCall(0).args[1],
+                resolveStub.getCall(0).args[1],
                 Object.assign({}, options, {family: Lookup.IPv4})
             );
 
             assert.deepEqual(
-                resolveTaskBuilderStub.getCall(1).args[1],
+                resolveStub.getCall(1).args[1],
                 Object.assign({}, options, {family: Lookup.IPv6})
             );
 
@@ -208,14 +208,14 @@ describe('Unit: Lookup::_resolveBoth', () => {
         const ipv4records = ['1.2.3.4', 4];
         const ipv6records = [];
 
-        const resolveTaskBuilderStub = sinon.stub(lookup, '_resolveTaskBuilder');
-        resolveTaskBuilderStub.onCall(0).callsFake(() => {
+        const resolveStub = sinon.stub(lookup, '_resolve');
+        resolveStub.onCall(0).callsFake(() => {
             return new Promise(resolve => {
                 resolve(ipv4records);
             });
         });
 
-        resolveTaskBuilderStub.onCall(1).callsFake(() => {
+        resolveStub.onCall(1).callsFake(() => {
             return new Promise(resolve => {
                 resolve(ipv6records);
             });
@@ -224,18 +224,18 @@ describe('Unit: Lookup::_resolveBoth', () => {
         const makeNotFoundErrorSpy = sinon.spy(lookup, '_makeNotFoundError');
 
         return lookup._resolveBoth(hostname, options).then(records => {
-            assert.isTrue(resolveTaskBuilderStub.calledTwice);
+            assert.isTrue(resolveStub.calledTwice);
 
-            assert.strictEqual(resolveTaskBuilderStub.getCall(0).args[0], hostname);
-            assert.strictEqual(resolveTaskBuilderStub.getCall(1).args[0], hostname);
+            assert.strictEqual(resolveStub.getCall(0).args[0], hostname);
+            assert.strictEqual(resolveStub.getCall(1).args[0], hostname);
 
             assert.deepEqual(
-                resolveTaskBuilderStub.getCall(0).args[1],
+                resolveStub.getCall(0).args[1],
                 Object.assign({}, options, {family: Lookup.IPv4})
             );
 
             assert.deepEqual(
-                resolveTaskBuilderStub.getCall(1).args[1],
+                resolveStub.getCall(1).args[1],
                 Object.assign({}, options, {family: Lookup.IPv6})
             );
 
@@ -251,14 +251,14 @@ describe('Unit: Lookup::_resolveBoth', () => {
         const ipv4records = [];
         const ipv6records = ['2001:0db8:85a3:0000:0000:8a2e:0370:7334', 6];
 
-        const resolveTaskBuilderStub = sinon.stub(lookup, '_resolveTaskBuilder');
-        resolveTaskBuilderStub.onCall(0).callsFake(() => {
+        const resolveStub = sinon.stub(lookup, '_resolve');
+        resolveStub.onCall(0).callsFake(() => {
             return new Promise(resolve => {
                 resolve(ipv4records);
             });
         });
 
-        resolveTaskBuilderStub.onCall(1).callsFake(() => {
+        resolveStub.onCall(1).callsFake(() => {
             return new Promise(resolve => {
                 resolve(ipv6records);
             });
@@ -267,18 +267,18 @@ describe('Unit: Lookup::_resolveBoth', () => {
         const makeNotFoundErrorSpy = sinon.spy(lookup, '_makeNotFoundError');
 
         return lookup._resolveBoth(hostname, options).then(records => {
-            assert.isTrue(resolveTaskBuilderStub.calledTwice);
+            assert.isTrue(resolveStub.calledTwice);
 
-            assert.strictEqual(resolveTaskBuilderStub.getCall(0).args[0], hostname);
-            assert.strictEqual(resolveTaskBuilderStub.getCall(1).args[0], hostname);
+            assert.strictEqual(resolveStub.getCall(0).args[0], hostname);
+            assert.strictEqual(resolveStub.getCall(1).args[0], hostname);
 
             assert.deepEqual(
-                resolveTaskBuilderStub.getCall(0).args[1],
+                resolveStub.getCall(0).args[1],
                 Object.assign({}, options, {family: Lookup.IPv4})
             );
 
             assert.deepEqual(
-                resolveTaskBuilderStub.getCall(1).args[1],
+                resolveStub.getCall(1).args[1],
                 Object.assign({}, options, {family: Lookup.IPv6})
             );
 
