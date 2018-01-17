@@ -2,9 +2,8 @@
 
 const dns = require('dns');
 
-const _     = require('lodash');
-const async = require('async');
-const rr    = require('rr');
+const _  = require('lodash');
+const rr = require('rr');
 
 const AddressCache = require('./AddressCache');
 const TasksManager = require('./TasksManager');
@@ -86,9 +85,14 @@ class Lookup {
         switch (options.family) {
             case Lookup.IPv4:
             case Lookup.IPv6:
-                return this._resolve(hostname, options, callback);
+                this._resolve(hostname, options, callback);
+
+                break;
             case undefined:
-                return this._resolveBoth(hostname, options, callback);
+                this._resolveBoth(hostname, options)
+                    .then(result => callback(null, ...result), error => callback(error));
+
+                break;
             default:
                 throw new Error('invalid family number, must be one of the {4, 6} or undefined');
         }
@@ -201,61 +205,54 @@ class Lookup {
      * @param {Object} options
      * @param {number} options.family
      * @param {boolean} options.all
-     * @param {Function} callback
      * @private
      */
-    _resolveBoth(hostname, options, callback) {
-        async.parallel(
-            [
-                this._resolveTaskBuilder(hostname, Object.assign({}, options, {family: Lookup.IPv4})),
-                this._resolveTaskBuilder(hostname, Object.assign({}, options, {family: Lookup.IPv6}))
-            ],
-            (error, records) => {
-                if (error) {
-                    return callback(error);
-                }
-
+    _resolveBoth(hostname, options) {
+        return Promise.all([
+            this._resolveTaskBuilder(hostname, Object.assign({}, options, {family: Lookup.IPv4})),
+            this._resolveTaskBuilder(hostname, Object.assign({}, options, {family: Lookup.IPv6}))
+        ])
+            .then(records => {
                 const [ipv4records, ipv6records] = records;
 
                 if (options.all) {
                     const result = ipv4records.concat(ipv6records);
 
                     if (_.isEmpty(result)) {
-                        return callback(this._makeNotFoundError(hostname));
+                        throw this._makeNotFoundError(hostname);
                     }
 
-                    return callback(null, result);
+                    return result;
                 } else if (!_.isEmpty(ipv4records)) {
-                    return callback(null, ...ipv4records);
+                    return ipv4records;
                 } else if (!_.isEmpty(ipv6records)) {
-                    return callback(null, ...ipv6records);
+                    return ipv6records;
                 }
 
-                return callback(this._makeNotFoundError(hostname));
-            }
-        );
+                throw this._makeNotFoundError(hostname);
+            });
     }
 
     /**
      * @param {string} hostname
      * @param {Object} options
-     * @returns {Function}
+     * @returns {Promise}
      * @private
      */
     _resolveTaskBuilder(hostname, options) {
-        return cb => {
+        return new Promise((resolve, reject) => {
             this._resolve(hostname, options, (error, ...records) => {
                 if (error) {
                     if (error.code === dns.NOTFOUND) {
-                        return cb(null, []);
+                        return resolve([]);
                     }
 
-                    return cb(error);
+                    return reject(error);
                 }
 
-                cb(null, ...records);
+                return resolve(records);
             });
-        };
+        });
     }
 
     // noinspection JSMethodCanBeStatic
