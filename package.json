@@ -19,7 +19,6 @@
     "rr": "0.1.0"
   },
   "devDependencies": {
-    "async": "2.6.0",
     "chai": "4.1.2",
     "eslint": "4.15.0",
     "istanbul": "0.4.5",
