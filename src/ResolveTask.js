@@ -60,6 +60,7 @@ class ResolveTask extends EventEmitter {
     /**
      * @param {Error} error
      * @param {Address[]} addresses
+     * @emits ResolveTask#error
      * @emits ResolveTask#addresses array of addresses
      * @private
      */

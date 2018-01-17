@@ -190,13 +190,8 @@ class Lookup {
                 task.run();
             }
 
-            task.on('error', error => {
-                return reject(error);
-            });
-
-            task.on('addresses', addresses => {
-                return resolve(addresses);
-            });
+            task.on('error', error => reject(error));
+            task.on('addresses', addresses => resolve(addresses));
         });
     }
 
@@ -208,12 +203,12 @@ class Lookup {
      * @private
      */
     _resolveBoth(hostname, options) {
-
         const resolve = (hostname, options) => {
             return this._resolve(hostname, options).catch(error => {
                 if (error.code === dns.NOTFOUND) {
                     return [];
                 }
+
                 throw error;
             });
         };
