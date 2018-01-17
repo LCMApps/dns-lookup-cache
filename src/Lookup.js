@@ -211,26 +211,25 @@ class Lookup {
         return Promise.all([
             this._resolveTaskBuilder(hostname, Object.assign({}, options, {family: Lookup.IPv4})),
             this._resolveTaskBuilder(hostname, Object.assign({}, options, {family: Lookup.IPv6}))
-        ])
-            .then(records => {
-                const [ipv4records, ipv6records] = records;
+        ]).then(records => {
+            const [ipv4records, ipv6records] = records;
 
-                if (options.all) {
-                    const result = ipv4records.concat(ipv6records);
+            if (options.all) {
+                const result = ipv4records.concat(ipv6records);
 
-                    if (_.isEmpty(result)) {
-                        throw this._makeNotFoundError(hostname);
-                    }
-
-                    return result;
-                } else if (!_.isEmpty(ipv4records)) {
-                    return ipv4records;
-                } else if (!_.isEmpty(ipv6records)) {
-                    return ipv6records;
+                if (_.isEmpty(result)) {
+                    throw this._makeNotFoundError(hostname);
                 }
 
-                throw this._makeNotFoundError(hostname);
-            });
+                return result;
+            } else if (!_.isEmpty(ipv4records)) {
+                return ipv4records;
+            } else if (!_.isEmpty(ipv6records)) {
+                return ipv6records;
+            }
+
+            throw this._makeNotFoundError(hostname);
+        });
     }
 
     /**
