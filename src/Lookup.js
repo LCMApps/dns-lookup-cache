@@ -85,7 +85,8 @@ class Lookup {
         switch (options.family) {
             case Lookup.IPv4:
             case Lookup.IPv6:
-                this._resolve(hostname, options, callback);
+                this._resolve(hostname, options)
+                    .then(result => callback(null, ...result), error => callback(error));
 
                 break;
             case undefined:
@@ -103,101 +104,98 @@ class Lookup {
      * @param {Object} options
      * @param {number} options.family
      * @param {boolean} options.all
-     * @param {Function} callback
      * @private
      */
-    _resolve(hostname, options, callback) {
+    _resolve(hostname, options) {
         this._amountOfResolveTries[hostname] = this._amountOfResolveTries[hostname] || 0;
 
-        this._innerResolve(hostname, options.family, (error, records) => {
-            if (error) {
+        return this._innerResolve(hostname, options.family)
+            .then(records => {
+                // Corner case branch.
+                //
+                // Intensively calling `lookup` method in parallel can produce situations
+                // when DNS TTL for particular IP has been exhausted,
+                // but task queue within NodeJS is full of `resolved` callbacks.
+                // No way to skip them or update DNS cache before them.
+                //
+                // The work around is return undefined for that callbacks and client code should repeat `lookup` call.
+                if (!records) {
+                    if (this._amountOfResolveTries[hostname] >= Lookup.MAX_AMOUNT_OF_RESOLVE_TRIES) {
+                        this._amountOfResolveTries[hostname] = 0;
+
+                        throw new Error(`Cannot resolve host '${hostname}'. Too deep recursion.`);
+                    }
+
+                    this._amountOfResolveTries[hostname] += 1;
+
+                    return this._resolve(hostname, options);
+                }
+
                 this._amountOfResolveTries[hostname] = 0;
 
+                if (options.all) {
+                    const result = records.map(record => {
+                        return {
+                            address: record.address,
+                            family:  record.family
+                        };
+                    });
+
+                    return [result];
+                } else {
+                    const record = rr(records);
+
+                    return [record.address, record.family];
+                }
+            })
+            .catch(error => {
                 if (error.code === dns.NODATA) {
-                    return callback(this._makeNotFoundError(hostname, error.syscall));
+                    throw this._makeNotFoundError(hostname, error.syscall);
                 }
 
-                return callback(error);
-            }
-
-            // Corner case branch.
-            //
-            // Intensively calling `lookup` method in parallel can produce situations
-            // when DNS TTL for particular IP has been exhausted,
-            // but task queue within NodeJS is full of `resolved` callbacks.
-            // No way to skip them or update DNS cache before them.
-            //
-            // So the work around is return undefined for that callbacks and client code should repeat `lookup` call.
-            if (!records) {
-                if (this._amountOfResolveTries[hostname] >= Lookup.MAX_AMOUNT_OF_RESOLVE_TRIES) {
-                    this._amountOfResolveTries[hostname] = 0;
-
-                    return callback(new Error(`Cannot resolve host '${hostname}'. Too deep recursion.`));
-                }
-
-                this._amountOfResolveTries[hostname] += 1;
-
-                return this._resolve(hostname, options, callback);
-            }
-
-            this._amountOfResolveTries[hostname] = 0;
-
-            if (options.all) {
-                const result = records.map(record => {
-                    return {
-                        address: record.address,
-                        family:  record.family
-                    };
-                });
-
-                return callback(null, result);
-            } else {
-                const record = rr(records);
-
-                return callback(null, record.address, record.family);
-            }
-        });
+                throw error;
+            });
     }
 
     /**
      * @param {string} hostname
      * @param {number} ipVersion
-     * @param {Function} callback
      * @private
      */
-    _innerResolve(hostname, ipVersion, callback) {
+    _innerResolve(hostname, ipVersion) {
         const key = `${hostname}_${ipVersion}`;
 
-        const cachedAddresses = this._addressCache.find(key);
+        return new Promise((resolve, reject) => {
+            const cachedAddresses = this._addressCache.find(key);
 
-        if (cachedAddresses) {
-            setImmediate(() => {
-                callback(null, cachedAddresses);
+            if (cachedAddresses) {
+                return resolve(cachedAddresses);
+            }
+
+            let task = this._tasksManager.find(key);
+
+            if (!task) {
+                task = new ResolveTask(hostname, ipVersion);
+
+                this._tasksManager.add(key, task);
+
+                task.on('addresses', addresses => {
+                    this._addressCache.set(key, addresses);
+
+                    this._tasksManager.done(key);
+                });
+
+                task.run();
+            }
+
+            task.on('error', error => {
+                return reject(error);
             });
-
-            return;
-        }
-
-        let task = this._tasksManager.find(key);
-
-        if (task) {
-            task.addResolvedCallback(callback);
-        } else {
-            task = new ResolveTask(hostname, ipVersion);
-
-            this._tasksManager.add(key, task);
 
             task.on('addresses', addresses => {
-                this._addressCache.set(key, addresses);
+                return resolve(addresses);
             });
-
-            task.on('done', () => {
-                this._tasksManager.done(key);
-            });
-
-            task.addResolvedCallback(callback);
-            task.run();
-        }
+        });
     }
 
     /**
@@ -239,19 +237,14 @@ class Lookup {
      * @private
      */
     _resolveTaskBuilder(hostname, options) {
-        return new Promise((resolve, reject) => {
-            this._resolve(hostname, options, (error, ...records) => {
-                if (error) {
-                    if (error.code === dns.NOTFOUND) {
-                        return resolve([]);
-                    }
-
-                    return reject(error);
+        return this._resolve(hostname, options)
+            .catch(error => {
+                if (error.code === dns.NOTFOUND) {
+                    return [];
                 }
 
-                return resolve(records);
+                throw error;
             });
-        });
     }
 
     // noinspection JSMethodCanBeStatic

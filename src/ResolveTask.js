@@ -46,19 +46,11 @@ class ResolveTask extends EventEmitter {
             `ipVersion must be 4 or 6. '${ipVersion}' has been provided.`
         );
 
-        this._callbacks = [];
         this._hostname  = hostname;
         this._ipVersion = ipVersion;
         this._resolver  = ipVersion === ResolveTask.IPv4 ? dns.resolve4 : dns.resolve6;
 
         this._resolved = this._resolved.bind(this);
-    }
-
-    /**
-     * @param {Function} callback
-     */
-    addResolvedCallback(callback) {
-        this._callbacks.push(callback);
     }
 
     run() {
@@ -69,33 +61,24 @@ class ResolveTask extends EventEmitter {
      * @param {Error} error
      * @param {Address[]} addresses
      * @emits ResolveTask#addresses array of addresses
-     * @emits ResolveTask#done notification about completion
      * @private
      */
     _resolved(error, addresses) {
-        assert(this._callbacks.length > 0, 'callbacks array cannot be empty.');
-
-        if (!error) {
-            assert(
-                Array.isArray(addresses) && addresses.length > 0,
-                'addresses must be a not empty array.'
-            );
-
-            addresses.forEach(address => {
-                address.family      = this._ipVersion;
-                address.expiredTime = Date.now() + address.ttl * 1000;
-            });
-
-            this.emit('addresses', addresses);
+        if (error) {
+            return this.emit('error', error);
         }
 
-        this._callbacks.forEach(callback => {
-            setImmediate(() => callback(error, addresses));
+        assert(
+            Array.isArray(addresses) && addresses.length > 0,
+            'addresses must be a not empty array.'
+        );
+
+        addresses.forEach(address => {
+            address.family      = this._ipVersion;
+            address.expiredTime = Date.now() + address.ttl * 1000;
         });
 
-        this._callbacks = [];
-
-        this.emit('done');
+        this.emit('addresses', addresses);
     }
 }
 
