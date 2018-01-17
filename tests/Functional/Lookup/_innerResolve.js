@@ -8,7 +8,7 @@ const ResolveTask = require('../../../src/ResolveTask');
 const addresses   = require('../../addresses');
 
 describe('Func: Lookup::_innerResolve', () => {
-    it('must has correct behavior for parallel requests with for different hosts', done => {
+    it('must has correct behavior for parallel requests with for different hosts', () => {
         const ipVersion = 4;
 
         const lookup = new Lookup();
@@ -20,49 +20,39 @@ describe('Func: Lookup::_innerResolve', () => {
         const tasksManagerAddSpy  = sinon.spy(lookup._tasksManager, 'add');
         const tasksManagerDoneSpy = sinon.spy(lookup._tasksManager, 'done');
 
-        const taskAddResolvedCallbackSpy = sinon.spy(ResolveTask.prototype, 'addResolvedCallback');
-        const taskRunSpy                 = sinon.spy(ResolveTask.prototype, 'run');
+        const taskRunSpy = sinon.spy(ResolveTask.prototype, 'run');
 
-        const resolveCallback = (resolve, reject) => (error, result) => error ? reject(error) : resolve(result);
+        return Promise.all([
+            lookup._innerResolve(addresses.INET_HOST1, ipVersion),
+            lookup._innerResolve(addresses.INET_HOST2, ipVersion)
+        ])
+            .then(results => {
+                assert.notDeepEqual(results[0], results[1]);
 
-        Promise.all([
-            new Promise((resolve, reject) => {
-                lookup._innerResolve(addresses.INET_HOST1, ipVersion, resolveCallback(resolve, reject));
-            }),
-            new Promise((resolve, reject) => {
-                lookup._innerResolve(addresses.INET_HOST2, ipVersion, resolveCallback(resolve, reject));
-            }),
-        ]).then(() => {
-            assert.isTrue(addressCacheFindSpy.calledTwice);
+                assert.isTrue(addressCacheFindSpy.calledTwice);
 
-            assert.isTrue(addressCacheSetSpy.calledTwice);
+                assert.isTrue(addressCacheSetSpy.calledTwice);
 
-            assert.isTrue(tasksManagerFindSpy.calledTwice);
+                assert.isTrue(tasksManagerFindSpy.calledTwice);
 
-            assert.isTrue(tasksManagerAddSpy.calledTwice);
+                assert.isTrue(tasksManagerAddSpy.calledTwice);
 
-            assert.isTrue(tasksManagerDoneSpy.calledTwice);
+                assert.isTrue(tasksManagerDoneSpy.calledTwice);
 
-            assert.isTrue(taskAddResolvedCallbackSpy.calledTwice);
-            assert.isTrue(taskRunSpy.calledTwice);
+                assert.isTrue(taskRunSpy.calledTwice);
 
-            addressCacheFindSpy.restore();
-            addressCacheSetSpy.restore();
+                addressCacheFindSpy.restore();
+                addressCacheSetSpy.restore();
 
-            tasksManagerFindSpy.restore();
-            tasksManagerAddSpy.restore();
-            tasksManagerDoneSpy.restore();
+                tasksManagerFindSpy.restore();
+                tasksManagerAddSpy.restore();
+                tasksManagerDoneSpy.restore();
 
-            taskAddResolvedCallbackSpy.restore();
-            taskRunSpy.restore();
-
-            done();
-        }).catch(error => {
-            assert.ifError(error);
-        });
+                taskRunSpy.restore();
+            });
     });
 
-    it('must has correct behavior for parallel requests with the same hostname', done => {
+    it('must has correct behavior for parallel requests with the same hostname', () => {
         const ipVersion = 4;
 
         const lookup = new Lookup();
@@ -74,52 +64,43 @@ describe('Func: Lookup::_innerResolve', () => {
         const tasksManagerAddSpy  = sinon.spy(lookup._tasksManager, 'add');
         const tasksManagerDoneSpy = sinon.spy(lookup._tasksManager, 'done');
 
-        const taskAddResolvedCallbackSpy = sinon.spy(ResolveTask.prototype, 'addResolvedCallback');
-        const taskRunSpy                 = sinon.spy(ResolveTask.prototype, 'run');
+        const taskRunSpy = sinon.spy(ResolveTask.prototype, 'run');
 
-        const resolveCallback = (resolve, reject) => (error, result) => error ? reject(error) : resolve(result);
+        return Promise.all([
+            lookup._innerResolve(addresses.INET_HOST1, ipVersion),
+            lookup._innerResolve(addresses.INET_HOST1, ipVersion)
+        ])
+            .then(results => {
+                assert.deepEqual(results[0], results[1]);
 
-        Promise.all([
-            new Promise((resolve, reject) => {
-                lookup._innerResolve(addresses.INET_HOST1, ipVersion, resolveCallback(resolve, reject));
-            }),
-            new Promise((resolve, reject) => {
-                lookup._innerResolve(addresses.INET_HOST1, ipVersion, resolveCallback(resolve, reject));
-            }),
-        ]).then(() => {
-            assert.isTrue(addressCacheFindSpy.calledTwice);
-            assert.isTrue(addressCacheFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
+                assert.isTrue(addressCacheFindSpy.calledTwice);
+                assert.isTrue(addressCacheFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
 
-            assert.isTrue(addressCacheSetSpy.calledOnce);
-            assert.strictEqual(addressCacheSetSpy.getCall(0).args[0], `${addresses.INET_HOST1}_${ipVersion}`);
-            assert.instanceOf(addressCacheSetSpy.getCall(0).args[1], Array);
+                assert.isTrue(addressCacheSetSpy.calledOnce);
+                assert.strictEqual(addressCacheSetSpy.getCall(0).args[0], `${addresses.INET_HOST1}_${ipVersion}`);
+                assert.instanceOf(addressCacheSetSpy.getCall(0).args[1], Array);
 
-            assert.isTrue(tasksManagerFindSpy.calledTwice);
-            assert.isTrue(tasksManagerFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
+                assert.isTrue(tasksManagerFindSpy.calledTwice);
+                assert.isTrue(tasksManagerFindSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
 
-            assert.isTrue(tasksManagerAddSpy.calledOnce);
-            assert.strictEqual(tasksManagerAddSpy.getCall(0).args[0], `${addresses.INET_HOST1}_${ipVersion}`);
-            assert.instanceOf(tasksManagerAddSpy.getCall(0).args[1], ResolveTask);
+                assert.isTrue(tasksManagerAddSpy.calledOnce);
+                assert.strictEqual(tasksManagerAddSpy.getCall(0).args[0], `${addresses.INET_HOST1}_${ipVersion}`);
+                assert.instanceOf(tasksManagerAddSpy.getCall(0).args[1], ResolveTask);
 
-            assert.isTrue(tasksManagerDoneSpy.calledOnce);
-            assert.isTrue(tasksManagerDoneSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
+                assert.isTrue(tasksManagerDoneSpy.calledOnce);
+                assert.isTrue(tasksManagerDoneSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
 
-            assert.isTrue(taskAddResolvedCallbackSpy.calledTwice);
-            assert.isTrue(taskRunSpy.calledOnce);
+                assert.isTrue(taskRunSpy.calledOnce);
 
-            addressCacheFindSpy.restore();
-            addressCacheSetSpy.restore();
+                addressCacheFindSpy.restore();
+                addressCacheSetSpy.restore();
 
-            tasksManagerFindSpy.restore();
-            tasksManagerAddSpy.restore();
-            tasksManagerDoneSpy.restore();
+                tasksManagerFindSpy.restore();
+                tasksManagerAddSpy.restore();
+                tasksManagerDoneSpy.restore();
 
-            taskAddResolvedCallbackSpy.restore();
-            taskRunSpy.restore();
-
-            done();
-        }).catch(error => {
-            assert.ifError(error);
-        });
+                taskRunSpy.restore();
+            });
     });
-});
+})
+;
