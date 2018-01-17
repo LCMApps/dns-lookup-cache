@@ -104,6 +104,7 @@ class Lookup {
      * @param {Object} options
      * @param {number} options.family
      * @param {boolean} options.all
+     * @returns {Promise}
      * @private
      */
     _resolve(hostname, options) {
@@ -160,6 +161,7 @@ class Lookup {
     /**
      * @param {string} hostname
      * @param {number} ipVersion
+     * @returns {Promise}
      * @private
      */
     _innerResolve(hostname, ipVersion) {
@@ -206,9 +208,19 @@ class Lookup {
      * @private
      */
     _resolveBoth(hostname, options) {
+
+        const resolve = (hostname, options) => {
+            return this._resolve(hostname, options).catch(error => {
+                if (error.code === dns.NOTFOUND) {
+                    return [];
+                }
+                throw error;
+            });
+        };
+
         return Promise.all([
-            this._resolveTaskBuilder(hostname, Object.assign({}, options, {family: Lookup.IPv4})),
-            this._resolveTaskBuilder(hostname, Object.assign({}, options, {family: Lookup.IPv6}))
+            resolve(hostname, Object.assign({}, options, {family: Lookup.IPv4})),
+            resolve(hostname, Object.assign({}, options, {family: Lookup.IPv6}))
         ]).then(records => {
             const [ipv4records, ipv6records] = records;
 
@@ -228,23 +240,6 @@ class Lookup {
 
             throw this._makeNotFoundError(hostname);
         });
-    }
-
-    /**
-     * @param {string} hostname
-     * @param {Object} options
-     * @returns {Promise}
-     * @private
-     */
-    _resolveTaskBuilder(hostname, options) {
-        return this._resolve(hostname, options)
-            .catch(error => {
-                if (error.code === dns.NOTFOUND) {
-                    return [];
-                }
-
-                throw error;
-            });
     }
 
     // noinspection JSMethodCanBeStatic
