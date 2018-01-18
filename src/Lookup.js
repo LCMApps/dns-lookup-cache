@@ -82,28 +82,16 @@ class Lookup {
             throw new Error('hostname must be a string');
         }
 
+        const resultCb = result => options.all ? callback(null, result) : callback(null, result.address, result.family);
+
         switch (options.family) {
             case Lookup.IPv4:
             case Lookup.IPv6:
-                this._resolve(hostname, options)
-                    .then(result => {
-                        if (options.all) {
-                            return callback(null, result);
-                        }
-
-                        return callback(null, result.address, result.family);
-                    }, error => callback(error));
+                this._resolve(hostname, options).then(resultCb, callback);
 
                 break;
             case undefined:
-                this._resolveBoth(hostname, options)
-                    .then(result => {
-                        if (options.all) {
-                            return callback(null, result);
-                        }
-
-                        return callback(null, result.address, result.family);
-                    }, error => callback(error));
+                this._resolveBoth(hostname, options).then(resultCb, callback);
 
                 break;
             default:
@@ -242,9 +230,9 @@ class Lookup {
                 }
 
                 return result;
-            } else if (ipv4records && !_.isEmpty(ipv4records)) {
+            } else if (!_.isEmpty(ipv4records)) {
                 return ipv4records;
-            } else if (ipv6records && !_.isEmpty(ipv6records)) {
+            } else if (!_.isEmpty(ipv6records)) {
                 return ipv6records;
             }
 
