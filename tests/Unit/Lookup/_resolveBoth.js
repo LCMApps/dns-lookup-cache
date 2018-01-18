@@ -111,7 +111,13 @@ describe('Unit: Lookup::_resolveBoth', () => {
             expectedError.errno    = dns.NOTFOUND;
 
             const resolveStub = sinon.stub(lookup, '_resolve').callsFake(() => {
-                return new Promise(resolve => resolve([]));
+                return new Promise(resolve => {
+                    if (options.all) {
+                        resolve([]);
+                    } else {
+                        resolve({});
+                    }
+                });
             });
 
             const makeNotFoundErrorSpy = sinon.spy(lookup, '_makeNotFoundError');
@@ -205,8 +211,8 @@ describe('Unit: Lookup::_resolveBoth', () => {
     it('must return IPv4 address that was found with {all: false} option', () => {
         const options = {all: false};
 
-        const ipv4records = ['1.2.3.4', 4];
-        const ipv6records = [];
+        const ipv4records = [['1.2.3.4', 4]];
+        const ipv6records = [[]];
 
         const resolveStub = sinon.stub(lookup, '_resolve');
         resolveStub.onCall(0).callsFake(() => {

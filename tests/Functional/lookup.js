@@ -3,9 +3,9 @@
 const dns = require('dns');
 const net = require('net');
 
-const { assert } = require('chai');
+const {assert} = require('chai');
 
-const { lookup } = require('../../');
+const {lookup} = require('../../');
 
 const addresses = require('../addresses');
 
@@ -60,34 +60,34 @@ describe("must correct process 'hostname' param", () => {
 
     const optionsValues = [
         {
-            options: {},
-            expectedError: null,
+            options:         {},
+            expectedError:   null,
             expectedAddress: null,
-            expectedFamily: 4
+            expectedFamily:  4
         },
         {
-            options: { all: false },
-            expectedError: null,
+            options:         {all: false},
+            expectedError:   null,
             expectedAddress: null,
-            expectedFamily: 4
+            expectedFamily:  4
         },
         {
-            options: { all: false, family: 6 },
-            expectedError: null,
+            options:         {all: false, family: 6},
+            expectedError:   null,
             expectedAddress: null,
-            expectedFamily: 6
+            expectedFamily:  6
         },
         {
-            options: { all: true },
-            expectedError: null,
+            options:         {all: true},
+            expectedError:   null,
             expectedAddress: [],
-            expectedFamily: undefined
+            expectedFamily:  undefined
         },
         {
-            options: { all: true, family: 6 },
-            expectedError: null,
+            options:         {all: true, family: 6},
+            expectedError:   null,
             expectedAddress: [],
-            expectedFamily: undefined
+            expectedFamily:  undefined
         }
     ];
 
@@ -153,8 +153,8 @@ describe('must correct process `options` param', () => {
     });
 
     it('must correct call lookup method if `options` param is omitted', done => {
-        const expectedError = null;
-        const expectedAddress = null;
+        const expectedError    = null;
+        const expectedAddress  = null;
         const expectedIpFamily = 4;
 
         lookup(null, (error, address, family) => {
@@ -168,8 +168,8 @@ describe('must correct process `options` param', () => {
 });
 
 describe('must correct process `callback` param', () => {
-    const hostname = null;
-    const options = {};
+    const hostname         = null;
+    const options          = {};
     const invalidCallbacks = [
         undefined,
         null,
@@ -194,9 +194,9 @@ describe('must correct process `callback` param', () => {
         });
     });
 
-    const expectedError = null;
+    const expectedError   = null;
     const expectedAddress = null;
-    const expectedFamily = 4;
+    const expectedFamily  = 4;
 
     it('must okay process, cuz callback param is a function', done => {
         lookup(hostname, options, (error, address, family) => {
@@ -212,20 +212,20 @@ describe('must correct process `callback` param', () => {
 describe('must correct lookup for all IPv4 and IPv6 addresses', () => {
     const testCases = [
         {
-            title: 'must correct lookup all IPv4 addresses',
-            family: 4,
+            title:              'must correct lookup all IPv4 addresses',
+            family:             4,
             expectedAddressIps: [net.isIPv4],
             expectedIpFamilies: [4]
         },
         {
-            title: 'must correct lookup all IPv6 addresses',
-            family: 6,
+            title:              'must correct lookup all IPv6 addresses',
+            family:             6,
             expectedAddressIps: [net.isIPv6],
             expectedIpFamilies: [6]
         },
         {
-            title: 'must correct lookup all IPv4 and IPv6 addresses',
-            family: undefined,
+            title:              'must correct lookup all IPv4 and IPv6 addresses',
+            family:             undefined,
             expectedAddressIps: [net.isIPv4, net.isIPv6],
             expectedIpFamilies: [4, 6]
         }
@@ -235,18 +235,19 @@ describe('must correct lookup for all IPv4 and IPv6 addresses', () => {
         it(testCase.title, done => {
             lookup(
                 addresses.INET_HOST1,
-                { all: true, family: testCase.family },
+                {all: true, family: testCase.family},
                 (err, ips) => {
                     assert.ifError(err);
 
                     assert.isTrue(Array.isArray(ips));
 
+                    const ipFamilies = [...new Set(ips.map(ip => ip.family))];
+
+                    assert.deepEqual(ipFamilies, testCase.expectedIpFamilies);
+
                     assert.isTrue(
                         ips.every(ip => {
-                            return (
-                                testCase.expectedAddressIps.some(func => func(ip.address)) &&
-                                testCase.expectedIpFamilies.includes(ip.family)
-                            );
+                            return testCase.expectedAddressIps.some(func => func(ip.address));
                         })
                     );
 
@@ -260,16 +261,22 @@ describe('must correct lookup for all IPv4 and IPv6 addresses', () => {
 describe('must correct lookup for one IPv4/IPv6 address', () => {
     const testCases = [
         {
-            title: 'must correct lookup IPv4 address',
-            family: 4,
+            title:             'must correct lookup IPv4 address',
+            family:            4,
             expectedAddressIp: net.isIPv4,
-            expectedIpFamily: 4
+            expectedIpFamily:  4
         },
         {
-            title: 'must correct lookup IPv6 address',
-            family: 6,
+            title:             'must correct lookup IPv6 address',
+            family:            6,
             expectedAddressIp: net.isIPv6,
-            expectedIpFamily: 6
+            expectedIpFamily:  6
+        },
+        {
+            title:             'must correct lookup IPv6 address',
+            family:            undefined,
+            expectedAddressIp: net.isIPv4,
+            expectedIpFamily:  4
         }
     ];
 
@@ -277,7 +284,7 @@ describe('must correct lookup for one IPv4/IPv6 address', () => {
         it(testCase.title, done => {
             lookup(
                 addresses.INET_HOST1,
-                { family: testCase.family },
+                {family: testCase.family},
                 (err, address, family) => {
                     assert.ifError(err);
 
