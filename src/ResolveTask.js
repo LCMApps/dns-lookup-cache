@@ -51,6 +51,8 @@ class ResolveTask extends EventEmitter {
         this._resolver  = ipVersion === ResolveTask.IPv4 ? dns.resolve4 : dns.resolve6;
 
         this._resolved = this._resolved.bind(this);
+
+        this.setMaxListeners(Infinity);
     }
 
     run() {

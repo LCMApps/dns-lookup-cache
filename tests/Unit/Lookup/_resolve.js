@@ -120,11 +120,11 @@ describe('Unit: Lookup::_resolve', () => {
             .then(results => {
                 const [resolve1, resolve2, resolve3] = results;
 
-                assert.deepEqual(resolve1, [records[0].address, records[0].family]);
+                assert.deepEqual(resolve1, {address: records[0].address, family: records[0].family});
 
-                assert.deepEqual(resolve2, [records[1].address, records[1].family]);
+                assert.deepEqual(resolve2, {address: records[1].address, family: records[1].family});
 
-                assert.deepEqual(resolve3, [records[0].address, records[0].family]);
+                assert.deepEqual(resolve3, {address: records[0].address, family: records[0].family});
 
                 assert.strictEqual(
                     lookup._amountOfResolveTries[hostname],
@@ -152,8 +152,7 @@ describe('Unit: Lookup::_resolve', () => {
 
         return lookup._resolve(hostname, {all: true, family: 4})
             .then(results => {
-                assert.strictEqual(results.length, 1);
-                assert.deepEqual(results[0], expectedRecords);
+                assert.deepEqual(results, expectedRecords);
 
                 assert.strictEqual(
                     lookup._amountOfResolveTries[hostname],

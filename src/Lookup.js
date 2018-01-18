@@ -86,12 +86,24 @@ class Lookup {
             case Lookup.IPv4:
             case Lookup.IPv6:
                 this._resolve(hostname, options)
-                    .then(result => callback(null, ...result), error => callback(error));
+                    .then(result => {
+                        if (options.all) {
+                            return callback(null, result);
+                        }
+
+                        return callback(null, result.address, result.family);
+                    }, error => callback(error));
 
                 break;
             case undefined:
                 this._resolveBoth(hostname, options)
-                    .then(result => callback(null, ...result), error => callback(error));
+                    .then(result => {
+                        if (options.all) {
+                            return callback(null, result);
+                        }
+
+                        return callback(null, result.address, result.family);
+                    }, error => callback(error));
 
                 break;
             default:
@@ -142,11 +154,14 @@ class Lookup {
                         };
                     });
 
-                    return [result];
+                    return result;
                 } else {
                     const record = rr(records);
 
-                    return [record.address, record.family];
+                    return {
+                        address: record.address,
+                        family:  record.family
+                    };
                 }
             })
             .catch(error => {
@@ -227,9 +242,9 @@ class Lookup {
                 }
 
                 return result;
-            } else if (!_.isEmpty(ipv4records)) {
+            } else if (ipv4records && !_.isEmpty(ipv4records)) {
                 return ipv4records;
-            } else if (!_.isEmpty(ipv6records)) {
+            } else if (ipv6records && !_.isEmpty(ipv6records)) {
                 return ipv6records;
             }
 

@@ -40,16 +40,16 @@ describe('Unit: Lookup::run', () => {
     });
 
     const setOfOptions = [
-        {family: 4},
-        {family: 6}
+        {all: true, family: 4},
+        {all: true, family: 6}
     ];
 
     setOfOptions.forEach(options => {
         it(`must correct call callback with results for options ${JSON.stringify(options)}`, done => {
-            const expectedAddresses = [[
+            const expectedAddresses = [
                 {address: '1.2.3.4'},
                 {address: '5.6.7.8'}
-            ]];
+            ];
 
             const cbSpy = sinon.stub();
 
@@ -63,7 +63,7 @@ describe('Unit: Lookup::run', () => {
                 assert.isTrue(resolveStub.calledWithExactly(hostname, options));
 
                 assert.isTrue(cbSpy.calledOnce);
-                assert.isTrue(cbSpy.calledWithExactly(null, ...expectedAddresses));
+                assert.isTrue(cbSpy.calledWithExactly(null, expectedAddresses));
 
                 assert.isTrue(resolveBothStub.notCalled);
 
@@ -124,12 +124,12 @@ describe('Unit: Lookup::run', () => {
     });
 
     it('must correct call callback with appropriate data when family value is undefined', done => {
-        const expectedAddresses = [[
+        const expectedAddresses = [
             {address: '1.2.3.4'},
             {address: '5.6.7.8'}
-        ]];
+        ];
 
-        const options = {family: undefined};
+        const options = {all: true, family: undefined};
 
         const cbSpy = sinon.stub();
 
@@ -142,7 +142,7 @@ describe('Unit: Lookup::run', () => {
             assert.isTrue(resolveStub.notCalled);
 
             assert.isTrue(cbSpy.calledOnce);
-            assert.isTrue(cbSpy.calledWithExactly(null, ...expectedAddresses));
+            assert.isTrue(cbSpy.calledWithExactly(null, expectedAddresses));
 
             assert.isTrue(resolveBothStub.calledOnce);
             assert.isTrue(resolveBothStub.calledWithExactly(hostname, options));
