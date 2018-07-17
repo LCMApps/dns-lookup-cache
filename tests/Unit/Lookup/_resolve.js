@@ -25,7 +25,7 @@ describe('Unit: Lookup::_resolve', () => {
         innerResolveStub.restore();
     });
 
-    it('must correct rejects with adjusted error', done => {
+    it('must correct rejects with adjusted error if got NODATA error', done => {
         const err   = new Error('some error');
         err.syscall = 'some-sys-call';
         err.code    = dns.NODATA;
@@ -56,6 +56,40 @@ describe('Unit: Lookup::_resolve', () => {
 
                 done();
             });
+    });
+
+    const testCases = [
+        {
+            family: 4
+        },
+        {
+            family: 6
+        }
+    ];
+
+    testCases.forEach(testCase => {
+        it(`must correct rejects with error if got empty result with no error for family - ${
+            testCase.family
+            }`, done => {
+
+            const expectedError = new Error(`Empty "${testCase.family === 4 ? 'A' : 'AAAA'}" records list for ` +
+                hostname);
+            expectedError.hostname = hostname;
+            const expectedNumberOfResolveTriesAfterError = 0;
+
+            innerResolveStub  = sinon.stub(Lookup.prototype, '_innerResolve').resolves([]);
+
+            lookup._resolve(hostname, {family: testCase.family})
+                .catch(error => {
+                    assert.instanceOf(error, Error);
+                    assert.strictEqual(error.message, expectedError.message);
+                    assert.strictEqual(error.hostname, expectedError.hostname);
+
+                    assert.strictEqual(lookup._amountOfResolveTries[hostname], expectedNumberOfResolveTriesAfterError);
+
+                    done();
+                });
+        });
     });
 
     it('must correct rejects with original error', done => {
