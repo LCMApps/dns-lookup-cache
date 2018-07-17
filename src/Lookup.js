@@ -193,7 +193,11 @@ class Lookup {
                 task.run();
             }
 
-            task.on('error', error => reject(error));
+            task.on('error', error => {
+                this._tasksManager.done(key);
+
+                reject(error);
+            });
             task.on('addresses', addresses => resolve(addresses));
         });
     }

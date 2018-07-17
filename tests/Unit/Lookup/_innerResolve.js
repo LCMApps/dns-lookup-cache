@@ -310,7 +310,8 @@ describe('Unit: Lookup::_innerResolve', () => {
                         );
                         assert.strictEqual(tasksManagerAddSpy.getCall(0).args[1], task);
 
-                        assert.isTrue(tasksManagerDoneSpy.notCalled);
+                        assert.isTrue(tasksManagerDoneSpy.calledOnce);
+                        assert.isTrue(tasksManagerDoneSpy.calledWithExactly(`${addresses.INET_HOST1}_${ipVersion}`));
 
                         assert.isTrue(resolveTaskRunSpy.calledOnce);
                         assert.isTrue(resolveTaskRunSpy.calledWithExactly());
