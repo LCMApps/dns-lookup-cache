@@ -135,15 +135,23 @@ class Lookup {
                 this._amountOfResolveTries[hostname] = 0;
 
                 if (options.all) {
-                    const result = records.map(record => {
+                    return records.map(record => {
                         return {
                             address: record.address,
                             family:  record.family
                         };
                     });
-
-                    return result;
                 } else {
+                    if (_.isEmpty(records)) {
+                        const errorMessage = `Empty "${options.family === 4 ? 'A' : 'AAAA'}" records list for ` +
+                            hostname;
+
+                        const error = new Error(errorMessage);
+                        error.hostname = hostname;
+
+                        throw error;
+                    }
+
                     const record = rr(records);
 
                     return {
