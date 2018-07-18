@@ -1,6 +1,6 @@
 {
   "name": "lookup-dns-cache",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An implementation to speed up the nodejs `dns.lookup` method by avoiding thread pool and using resolve4/resolve6 with DNS TTL values",
   "main": "index.js",
   "engines": {
