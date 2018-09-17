@@ -70,7 +70,7 @@ describe('Unit: Lookup::_resolve', () => {
     testCases.forEach(testCase => {
         it(`must correct rejects with error if got empty result with no error for family - ${
             testCase.family
-            }`, done => {
+        }`, done => {
 
             const expectedError = new Error(`Empty "${testCase.family === 4 ? 'A' : 'AAAA'}" records list for ` +
                 hostname);

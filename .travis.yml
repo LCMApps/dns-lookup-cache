@@ -1,0 +1,11 @@
+language: node_js
+node_js:
+  - "node"
+  - "8"
+  - "6"
+
+script:
+  - "yarn run lint"
+  - "yarn run tests"
+
+after_success: "yarn run coveralls"

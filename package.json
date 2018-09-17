@@ -1,29 +1,48 @@
 {
   "name": "dns-lookup-cache",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "An implementation to speed up the nodejs `dns.lookup` method by avoiding thread pool and using resolve4/resolve6 with DNS TTL values",
   "main": "index.js",
   "engines": {
-    "node": ">=6.0 <9.0"
+    "node": ">=6.0"
   },
-  "license": "MIT",
   "scripts": {
-    "lint": "./node_modules/.bin/eslint ./",
-    "test": "yarn run unit-test && yarn run func-test",
-    "unit-test": "NODE_ENV=test ./node_modules/.bin/mocha --opts tests/mocha.opts -R spec ./tests/Unit/**",
-    "func-test": "NODE_ENV=test ./node_modules/.bin/mocha --opts tests/mocha.opts --timeout 15000 -R spec ./tests/Functional/**",
-    "test:coverage": "NODE_ENV=test ./node_modules/.bin/istanbul cover ./node_modules/.bin/_mocha --print both -- --opts tests/mocha.opts -R spec ./tests"
+    "lint": "eslint ./",
+    "tests": "yarn run unit-test && yarn run func-test",
+    "unit-test": "NODE_ENV=test mocha --opts tests/mocha.opts -R spec ./tests/Unit/**",
+    "func-test": "NODE_ENV=test mocha --opts tests/mocha.opts --timeout 15000 -R spec ./tests/Functional/**",
+    "test:coverage": "NODE_ENV=test istanbul cover ./node_modules/.bin/_mocha --print both -- --opts tests/mocha.opts -R spec ./tests",
+    "coveralls": "NODE_ENV=test istanbul cover ./node_modules/mocha/bin/_mocha --report lcovonly -- --opts tests/mocha.opts -R spec ./tests/Unit && cat ./coverage/lcov.info | ./node_modules/coveralls/bin/coveralls.js && rm -rf ./coverage"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LCMApps/dns-lookup-cache.git"
+  },
+  "keywords": [
+    "dns",
+    "lookup",
+    "resolve4",
+    "resolve6",
+    "cache",
+    "ipv4",
+    "ipv6"
+  ],
+  "license": "MIT",
   "dependencies": {
-    "lodash": "4.17.4",
-    "rr": "0.1.0"
+    "lodash": "^4.17.11",
+    "rr": "^0.1.0"
   },
   "devDependencies": {
-    "chai": "4.1.2",
-    "eslint": "4.15.0",
-    "istanbul": "0.4.5",
-    "mocha": "4.1.0",
-    "proxyquire": "1.8.0",
-    "sinon": "4.1.4"
-  }
+    "chai": "^4.1.2",
+    "coveralls": "^3.0.2",
+    "eslint": "4.19.1",
+    "istanbul": "^0.4.5",
+    "mocha": "^5.2.0",
+    "proxyquire": "^2.1.0",
+    "sinon": "^6.3.3"
+  },
+  "bugs": {
+    "url": "https://github.com/LCMApps/dns-lookup-cache/issues"
+  },
+  "homepage": "https://github.com/LCMApps/dns-lookup-cache"
 }
