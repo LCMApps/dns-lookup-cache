@@ -100,5 +100,66 @@ describe('Func: Lookup::_innerResolve', () => {
             taskRunSpy.restore();
         });
     });
-})
-;
+
+    it('must has correct behavior on resolving error for parallel requests with the same hostname', () => {
+        const ipVersion = 4;
+
+        const lookup = new Lookup();
+
+        const addressCacheFindSpy = sinon.spy(lookup._addressCache, 'find');
+        const addressCacheSetSpy  = sinon.spy(lookup._addressCache, 'set');
+
+        const tasksManagerFindSpy = sinon.spy(lookup._tasksManager, 'find');
+        const tasksManagerAddSpy  = sinon.spy(lookup._tasksManager, 'add');
+        const tasksManagerDoneSpy = sinon.spy(lookup._tasksManager, 'done');
+
+        const taskRunSpy = sinon.spy(ResolveTask.prototype, 'run');
+
+        let resolveErrorCount = 0;
+
+        const firstRequestResult = lookup._innerResolve(addresses.INVALID_HOST, ipVersion)
+            .catch(err => {
+                assert.isPrototypeOf(err, Error);
+                assert.strictEqual(err.code, 'ENOTFOUND');
+                resolveErrorCount++;
+            });
+
+        const secondRequestResult = lookup._innerResolve(addresses.INVALID_HOST, ipVersion)
+            .catch(err => {
+                assert.isPrototypeOf(err, Error);
+                assert.strictEqual(err.code, 'ENOTFOUND');
+                resolveErrorCount++;
+            });
+
+        return Promise.all([firstRequestResult, secondRequestResult])
+            .then(() => {
+                assert.strictEqual(resolveErrorCount, 2);
+
+                assert.isTrue(addressCacheFindSpy.calledTwice);
+                assert.isTrue(addressCacheFindSpy.calledWithExactly(`${addresses.INVALID_HOST}_${ipVersion}`));
+
+                assert.isTrue(addressCacheSetSpy.notCalled);
+
+                assert.isTrue(tasksManagerFindSpy.calledTwice);
+                assert.isTrue(tasksManagerFindSpy.calledWithExactly(`${addresses.INVALID_HOST}_${ipVersion}`));
+
+                assert.isTrue(tasksManagerAddSpy.calledOnce);
+                assert.strictEqual(tasksManagerAddSpy.getCall(0).args[0], `${addresses.INVALID_HOST}_${ipVersion}`);
+                assert.instanceOf(tasksManagerAddSpy.getCall(0).args[1], ResolveTask);
+
+                assert.isTrue(tasksManagerDoneSpy.calledOnce);
+                assert.isTrue(tasksManagerDoneSpy.calledWithExactly(`${addresses.INVALID_HOST}_${ipVersion}`));
+
+                assert.isTrue(taskRunSpy.calledOnce);
+
+                addressCacheFindSpy.restore();
+                addressCacheSetSpy.restore();
+
+                tasksManagerFindSpy.restore();
+                tasksManagerAddSpy.restore();
+                tasksManagerDoneSpy.restore();
+
+                taskRunSpy.restore();
+            });
+    });
+});

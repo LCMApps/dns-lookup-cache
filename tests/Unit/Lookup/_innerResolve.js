@@ -72,7 +72,8 @@ describe('Unit: Lookup::_innerResolve', () => {
                 const task = new EventEmitter();
                 task.run   = resolveTaskRunSpy;
 
-                const resolveTaskOnSpy = sinon.spy(task, 'on');
+                const resolveTaskOnSpy   = sinon.spy(task, 'on');
+                const resolveTaskOnceSpy = sinon.spy(task, 'once');
 
                 const addressCacheFindSpy = sinon.spy(() => undefined);
                 const addressCacheSetSpy  = sinon.spy();
@@ -129,7 +130,8 @@ describe('Unit: Lookup::_innerResolve', () => {
 
                     assert.isTrue(resolveTaskRunSpy.calledOnce);
 
-                    assert.strictEqual(resolveTaskOnSpy.callCount, 5);
+                    assert.strictEqual(resolveTaskOnSpy.callCount, 6);
+                    assert.strictEqual(resolveTaskOnceSpy.callCount, 1);
 
                     assert.strictEqual(resolveTaskOnSpy.getCall(0).args[0], 'addresses');
                     assert.instanceOf(resolveTaskOnSpy.getCall(0).args[1], Function);
@@ -137,14 +139,20 @@ describe('Unit: Lookup::_innerResolve', () => {
                     assert.strictEqual(resolveTaskOnSpy.getCall(1).args[0], 'error');
                     assert.instanceOf(resolveTaskOnSpy.getCall(1).args[1], Function);
 
-                    assert.strictEqual(resolveTaskOnSpy.getCall(2).args[0], 'addresses');
+                    assert.strictEqual(resolveTaskOnSpy.getCall(2).args[0], 'error');
                     assert.instanceOf(resolveTaskOnSpy.getCall(2).args[1], Function);
 
-                    assert.strictEqual(resolveTaskOnSpy.getCall(3).args[0], 'error');
+                    assert.strictEqual(resolveTaskOnSpy.getCall(3).args[0], 'addresses');
                     assert.instanceOf(resolveTaskOnSpy.getCall(3).args[1], Function);
 
-                    assert.strictEqual(resolveTaskOnSpy.getCall(4).args[0], 'addresses');
+                    assert.strictEqual(resolveTaskOnSpy.getCall(4).args[0], 'error');
                     assert.instanceOf(resolveTaskOnSpy.getCall(4).args[1], Function);
+
+                    assert.strictEqual(resolveTaskOnSpy.getCall(5).args[0], 'addresses');
+                    assert.instanceOf(resolveTaskOnSpy.getCall(5).args[1], Function);
+
+                    assert.strictEqual(resolveTaskOnceSpy.getCall(0).args[0], 'error');
+                    assert.instanceOf(resolveTaskOnceSpy.getCall(0).args[1], Function);
 
                     assert.isTrue(tasksManagerFindSpy.calledTwice);
                     assert.isTrue(tasksManagerAddSpy.calledOnce);
@@ -233,7 +241,7 @@ describe('Unit: Lookup::_innerResolve', () => {
                         assert.isTrue(resolveTaskRunSpy.calledOnce);
                         assert.isTrue(resolveTaskRunSpy.calledWithExactly());
 
-                        assert.isTrue(resolveTaskOnSpy.calledThrice);
+                        assert.strictEqual(resolveTaskOnSpy.callCount, 4);
 
                         assert.strictEqual(resolveTaskOnSpy.getCall(0).args[0], 'addresses');
                         assert.instanceOf(resolveTaskOnSpy.getCall(0).args[1], Function);
@@ -241,8 +249,11 @@ describe('Unit: Lookup::_innerResolve', () => {
                         assert.strictEqual(resolveTaskOnSpy.getCall(1).args[0], 'error');
                         assert.instanceOf(resolveTaskOnSpy.getCall(1).args[1], Function);
 
-                        assert.strictEqual(resolveTaskOnSpy.getCall(2).args[0], 'addresses');
+                        assert.strictEqual(resolveTaskOnSpy.getCall(2).args[0], 'error');
                         assert.instanceOf(resolveTaskOnSpy.getCall(2).args[1], Function);
+
+                        assert.strictEqual(resolveTaskOnSpy.getCall(3).args[0], 'addresses');
+                        assert.instanceOf(resolveTaskOnSpy.getCall(3).args[1], Function);
                     });
             });
 
@@ -316,7 +327,7 @@ describe('Unit: Lookup::_innerResolve', () => {
                         assert.isTrue(resolveTaskRunSpy.calledOnce);
                         assert.isTrue(resolveTaskRunSpy.calledWithExactly());
 
-                        assert.isTrue(resolveTaskOnSpy.calledThrice);
+                        assert.strictEqual(resolveTaskOnSpy.callCount, 4);
 
                         assert.strictEqual(resolveTaskOnSpy.getCall(0).args[0], 'addresses');
                         assert.instanceOf(resolveTaskOnSpy.getCall(0).args[1], Function);
@@ -324,8 +335,11 @@ describe('Unit: Lookup::_innerResolve', () => {
                         assert.strictEqual(resolveTaskOnSpy.getCall(1).args[0], 'error');
                         assert.instanceOf(resolveTaskOnSpy.getCall(1).args[1], Function);
 
-                        assert.strictEqual(resolveTaskOnSpy.getCall(2).args[0], 'addresses');
+                        assert.strictEqual(resolveTaskOnSpy.getCall(2).args[0], 'error');
                         assert.instanceOf(resolveTaskOnSpy.getCall(2).args[1], Function);
+
+                        assert.strictEqual(resolveTaskOnSpy.getCall(3).args[0], 'addresses');
+                        assert.instanceOf(resolveTaskOnSpy.getCall(3).args[1], Function);
 
                         done();
                     });
