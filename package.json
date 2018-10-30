@@ -39,7 +39,7 @@
     "istanbul": "^0.4.5",
     "mocha": "^5.2.0",
     "proxyquire": "^2.1.0",
-    "sinon": "^6.3.3"
+    "sinon": "^7.1.0"
   },
   "bugs": {
     "url": "https://github.com/LCMApps/dns-lookup-cache/issues"
