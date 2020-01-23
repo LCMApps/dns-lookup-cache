@@ -1,5 +1,6 @@
 'use strict';
 
+const dns      = require('dns');
 const sinon    = require('sinon');
 const {assert} = require('chai');
 
@@ -120,14 +121,14 @@ describe('Func: Lookup::_innerResolve', () => {
         const firstRequestResult = lookup._innerResolve(addresses.INVALID_HOST, ipVersion)
             .catch(err => {
                 assert.isPrototypeOf(err, Error);
-                assert.strictEqual(err.code, 'ENOTFOUND');
+                assert.oneOf(err.code, [dns.NOTFOUND, dns.SERVFAIL]);
                 resolveErrorCount++;
             });
 
         const secondRequestResult = lookup._innerResolve(addresses.INVALID_HOST, ipVersion)
             .catch(err => {
                 assert.isPrototypeOf(err, Error);
-                assert.strictEqual(err.code, 'ENOTFOUND');
+                assert.oneOf(err.code, [dns.NOTFOUND, dns.SERVFAIL]);
                 resolveErrorCount++;
             });
 
