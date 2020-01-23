@@ -1,5 +1,9 @@
 # Changelog
 
+### 1.0.4
+
+- Dependencies was bumped
+
 ### 1.0.3
 
 IMPROVEMENTS:
