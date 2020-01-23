@@ -1,0 +1,54 @@
+name: NPM Release
+
+on:
+  release:
+    types: [published, edited]
+
+jobs:
+  check:
+    name: Check version and tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - name: Get package version
+        shell: bash
+        id: package_version
+        run: |
+          ver=$(jq .version package.json | sed -e "s/^\"//" -e "s/\"//")
+          echo "::set-output name=version::$ver"
+      - name: Compare package version and release tag
+        if: steps.package_version.outputs.version != github.event.release.tag_name
+        env:
+          TAG: "${{ github.event.release.tag_name }}"
+          PKG_VER: ${{ steps.package_version.outputs.version }}
+        run: |
+          echo "Mismatch NPM version $PKG_VER and git tag $TAG"
+          exit 1
+
+  build:
+    name: Lint and test
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+      - run: yarn install --frozen-lock-file
+      - run: yarn lint
+      - run: yarn tests
+
+  publish-npm:
+    name: Publish to NPM
+    needs: [check, build]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v1
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+          registry-url: https://registry.npmjs.org/
+      - run: yarn install --frozen-lock-file
+      - run: yarn publish
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}

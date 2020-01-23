@@ -29,12 +29,27 @@ describe("Func: must correct process 'hostname' param", () => {
     it('must throw an error, cuz `hostname` param has invalid value', done => {
         lookup(addresses.INVALID_HOST, error => {
             assert.instanceOf(error, Error);
-            assert.strictEqual(error.code, dns.NOTFOUND);
+            /*
+                In Ubuntu 18.04 command:
+                $ host something.invalid
+                returns:
+                "Host something.invalid not found: 2(SERVFAIL)"
+            */
+
+            assert.oneOf(error.code, [dns.NOTFOUND, dns.SERVFAIL]);
             assert.strictEqual(error.hostname, addresses.INVALID_HOST);
-            assert.match(
-                error.message,
-                new RegExp(`${dns.NOTFOUND} ${addresses.INVALID_HOST}`)
-            );
+
+            if (error.code === dns.NOTFOUND) {
+                assert.match(
+                    error.message,
+                    new RegExp(`${dns.NOTFOUND} ${addresses.INVALID_HOST}`)
+                );
+            } else {
+                assert.match(
+                    error.message,
+                    new RegExp(`${dns.SERVFAIL} ${addresses.INVALID_HOST}`)
+                );
+            }
 
             done();
         });
