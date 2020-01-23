@@ -1,6 +1,7 @@
 # dns-lookup-cache - DNS cache to replace NodeJS `dns.lookup` standard method
 
 [![NPM version](https://img.shields.io/npm/v/dns-lookup-cache.svg)](https://www.npmjs.com/package/dns-lookup-cache)
+[![Release Status](https://github.com/LCMApps/lcm-requester/workflows/NPM%20Release/badge.svg)](https://github.com/LCMApps/dns-lookup-cache/releases)
 [![Build Status](https://travis-ci.org/LCMApps/dns-lookup-cache.svg?branch=master)](https://travis-ci.org/LCMApps/dns-lookup-cache)
 [![Coverage Status](https://coveralls.io/repos/github/LCMApps/dns-lookup-cache/badge.svg?branch=master)](https://coveralls.io/github/LCMApps/dns-lookup-cache?branch=master)
 
