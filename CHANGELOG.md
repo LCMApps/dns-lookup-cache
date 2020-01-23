@@ -2,6 +2,8 @@
 
 ### 1.0.4
 
+IMPROVEMENTS:
+
 - Dependencies was bumped
 
 ### 1.0.3
