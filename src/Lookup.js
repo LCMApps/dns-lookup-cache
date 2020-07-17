@@ -45,6 +45,7 @@ class Lookup {
      * @param {Object} options
      * @param {number} options.family
      * @param {boolean} options.all
+     * @param {number} options.timeout
      * @param {Function} callback
      * @throws {Error}
      * @returns {{}|undefined}
@@ -104,13 +105,14 @@ class Lookup {
      * @param {Object} options
      * @param {number} options.family
      * @param {boolean} options.all
+     * @param {number} options.timeout
      * @returns {Promise}
      * @private
      */
     _resolve(hostname, options) {
         this._amountOfResolveTries[hostname] = this._amountOfResolveTries[hostname] || 0;
 
-        return this._innerResolve(hostname, options.family)
+        return this._innerResolve(hostname, options.family, options.timeout)
             .then(records => {
                 // Corner case branch.
                 //
@@ -172,10 +174,11 @@ class Lookup {
     /**
      * @param {string} hostname
      * @param {number} ipVersion
+     * @param {number} timeout
      * @returns {Promise}
      * @private
      */
-    _innerResolve(hostname, ipVersion) {
+    _innerResolve(hostname, ipVersion, timeout) {
         const key = `${hostname}_${ipVersion}`;
 
         return new Promise((resolve, reject) => {
@@ -188,7 +191,7 @@ class Lookup {
             let task = this._tasksManager.find(key);
 
             if (!task) {
-                task = new ResolveTask(hostname, ipVersion);
+                task = new ResolveTask(hostname, ipVersion, timeout);
 
                 this._tasksManager.add(key, task);
 
