@@ -22,4 +22,31 @@ describe('Unit: ResolveTask::run', () => {
         assert.isTrue(resolverSpy.calledOnce);
         assert.isTrue(resolverSpy.calledWithExactly(hostname, {ttl: true}, task._resolved));
     });
+
+    it('must run resolver with timeout', () => {
+        const timeout = 100;
+        const clock = sinon.useFakeTimers();
+        try {
+            const resolverSpy = sinon.spy();
+
+            const task = new ResolveTask(hostname, ipVersion, timeout);
+
+            let error = undefined;
+            task.on('error', err => error = err);
+
+            task._resolver = resolverSpy;
+
+            task.run();
+
+            assert.isDefined(task._timeoutHandle);
+
+            clock.tick(timeout);
+            assert.isUndefined(task._timeoutHandle);
+            assert.isDefined(error);
+            assert(error.code === 'ETIMEDOUT');
+        } finally {
+            clock.restore();
+        }
+
+    });
 });

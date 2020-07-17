@@ -32,8 +32,9 @@ class ResolveTask extends EventEmitter {
     /**
      * @param {string} hostname
      * @param {number} ipVersion
+     * @param {number} timeout
      */
-    constructor(hostname, ipVersion) {
+    constructor(hostname, ipVersion, timeout = 0) {
         super();
 
         assert(
@@ -48,6 +49,8 @@ class ResolveTask extends EventEmitter {
 
         this._hostname  = hostname;
         this._ipVersion = ipVersion;
+        this._timeout = timeout;
+        this._timeoutHandle = undefined;
         this._resolver  = ipVersion === ResolveTask.IPv4 ? dns.resolve4 : dns.resolve6;
 
         this._resolved = this._resolved.bind(this);
@@ -56,6 +59,11 @@ class ResolveTask extends EventEmitter {
     }
 
     run() {
+        if (this._timeout) {
+            const error = new Error('Timed out while resolving DNS');
+            error.code = 'ETIMEDOUT';
+            this._timeoutHandle = setTimeout(this._resolved, this._timeout, error);
+        }
         this._resolver(this._hostname, {ttl: true}, this._resolved);
     }
 
@@ -67,6 +75,10 @@ class ResolveTask extends EventEmitter {
      * @private
      */
     _resolved(error, addresses) {
+        if (this._timeoutHandle !== undefined) {
+            clearTimeout(this._timeoutHandle);
+            this._timeoutHandle = undefined;
+        }
         if (error) {
             return this.emit('error', error);
         }
