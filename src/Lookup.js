@@ -90,12 +90,13 @@ class Lookup {
                 this._resolve(hostname, options).then(resultCb, callback);
 
                 break;
+            case 0:
             case undefined:
                 this._resolveBoth(hostname, options).then(resultCb, callback);
 
                 break;
             default:
-                throw new Error('invalid family number, must be one of the {4, 6} or undefined');
+                throw new Error('invalid family number, must be one of the {0, 4, 6} or undefined');
         }
     }
 
